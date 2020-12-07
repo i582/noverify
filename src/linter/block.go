@@ -188,8 +188,9 @@ func (b *BlockWalker) EnterNode(n ir.Node) (res bool) {
 	case *ir.LogicalOrExpr:
 		res = b.handleLogicalOr(s)
 
-	case *ir.ArrayDimFetchExpr:
-		b.checkArrayDimFetch(s)
+	// Deprecated
+	// case *ir.ArrayDimFetchExpr:
+	// 	b.checkArrayDimFetch(s)
 
 	case *ir.GlobalStmt:
 		b.checkGlobalStmt(s)
@@ -669,7 +670,8 @@ func (b *BlockWalker) handleCatch(s *ir.CatchStmt) {
 
 // We still need to analyze expressions in isset()/unset()/empty() statements
 func (b *BlockWalker) handleIssetDimFetch(e *ir.ArrayDimFetchExpr) {
-	b.checkArrayDimFetch(e)
+	// Deprecated
+	// b.checkArrayDimFetch(e)
 
 	switch v := e.Variable.(type) {
 	case *ir.SimpleVar:
@@ -687,6 +689,7 @@ func (b *BlockWalker) handleIssetDimFetch(e *ir.ArrayDimFetchExpr) {
 	}
 }
 
+// Deprecated
 func (b *BlockWalker) checkArrayDimFetch(s *ir.ArrayDimFetchExpr) {
 	if !meta.IsIndexingComplete() {
 		return
@@ -1345,6 +1348,9 @@ func (b *BlockWalker) propagateFlagsFromBranches(contexts []*blockContext, links
 	}
 }
 
+// не получится разделить ввиду того, что в случае ошибки переменные добаляются
+// и после этого уже невозможно понять, была ли проблема, так что разделение
+// невозможно
 func (b *BlockWalker) handleVariable(v ir.Node) bool {
 	var varName string
 	switch v := v.(type) {
@@ -1686,7 +1692,9 @@ func (b *BlockWalker) handleSwitch(s *ir.SwitchStmt) bool {
 // handle case when doing assignment like '$a[] = 4;'
 // or call to function that accepts like exec("command", $a)
 func (b *BlockWalker) handleDimFetchLValue(e *ir.ArrayDimFetchExpr, reason string, typ meta.TypesMap) {
-	b.checkArrayDimFetch(e)
+
+	// deprecated
+	// b.checkArrayDimFetch(e)
 
 	switch v := e.Variable.(type) {
 	case *ir.Var, *ir.SimpleVar:

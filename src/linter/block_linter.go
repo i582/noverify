@@ -26,6 +26,9 @@ func (b *blockLinter) enterNode(n ir.Node) {
 	case *ir.ArrayExpr:
 		b.checkArray(n)
 
+	case *ir.ArrayDimFetchExpr:
+		b.checkArrayDimFetch(n)
+
 	case *ir.FunctionCallExpr:
 		b.checkFunctionCall(n)
 
@@ -175,8 +178,63 @@ func (b *blockLinter) report(n ir.Node, level int, checkName, msg string, args .
 	b.walker.r.Report(n, level, checkName, msg, args...)
 }
 
+func (b *blockLinter) checkAssignReference(a *ir.AssignReference) bool {
+	switch v := a.Variable.(type) {
+	case *ir.ArrayDimFetchExpr:
+		b.checkDimFetchLValue(v, "assign_array")
+	}
+
+	return false
+}
+
+func (b *blockLinter) checkDimFetchLValue(e *ir.ArrayDimFetchExpr, reason string) {
+	b.checkArrayDimFetch(e)
+
+	switch v := e.Variable.(type) {
+	case *ir.Var, *ir.SimpleVar:
+		// do in BlockWalker.handleDimFetchLValue
+		// b.walker.handleVariable(v)
+
+	case *ir.ArrayDimFetchExpr: // if nested
+		b.checkDimFetchLValue(v, reason)
+	}
+}
+
+func (b *blockLinter) checkIssetDimFetch(e *ir.ArrayDimFetchExpr) {
+	b.checkArrayDimFetch(e)
+}
+
+func (b *blockLinter) checkArrayDimFetch(s *ir.ArrayDimFetchExpr) {
+	typ := solver.ExprType(b.walker.ctx.sc, b.walker.r.ctx.st, s.Variable)
+
+	var (
+		maybeHaveClasses bool
+		haveArrayAccess  bool
+	)
+
+	typ.Iterate(func(t string) {
+		// FullyQualified class name will have "\" in the beginning
+		if meta.IsClassType(t) {
+			maybeHaveClasses = true
+
+			if !haveArrayAccess && solver.Implements(t, `\ArrayAccess`) {
+				haveArrayAccess = true
+			}
+		}
+	})
+
+	if maybeHaveClasses && !haveArrayAccess {
+		b.report(s.Variable, LevelDoNotReject, "arrayAccess", "Array access to non-array type %s", typ)
+	}
+}
+
 func (b *blockLinter) checkAssign(a *ir.Assign) {
 	b.checkVoidType(a.Expression)
+
+	switch v := a.Variable.(type) {
+	case *ir.ArrayDimFetchExpr:
+		b.checkDimFetchLValue(v, "assign_array")
+	}
 }
 
 func (b *blockLinter) checkTryStmt(s *ir.TryStmt) {
