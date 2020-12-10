@@ -72,7 +72,7 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 		if className, ok := solver.GetClassName(a.b.r.ctx.st, n.Class); ok {
 			switch v := n.Expr.(type) {
 			case *ir.Var, *ir.SimpleVar:
-				a.b.ctx.sc.AddVar(v, meta.NewTypesMap(className), "instanceof", 0)
+				a.b.ctx.sc.ReplaceVar(v, meta.NewTypesMap(className), "instanceof", meta.VarAlwaysDefined)
 			default:
 				a.b.ctx.customTypes = append(a.b.ctx.customTypes, solver.CustomType{
 					Node: n.Expr,

@@ -18,6 +18,28 @@ var (
 	PreciseStringType = NewPreciseTypesMap("string").Immutable()
 )
 
+var trivialTypes = map[string]bool{
+	"bool":     true,
+	"callable": true,
+	"float":    true,
+	"int":      true,
+	"mixed":    true,
+	"object":   true,
+	"resource": true,
+	"string":   true,
+	"void":     true,
+	"iterable": true,
+
+	"null":  true,
+	"true":  true,
+	"false": true,
+}
+
+func IsTrivialType(typ string) bool {
+	_, ok := trivialTypes[typ]
+	return ok
+}
+
 type Type struct {
 	Elem string
 	Dims int
@@ -330,6 +352,54 @@ func (m TypesMap) Contains(typ string) bool {
 	}
 	for typ2 := range m.m {
 		if typ2 == typ {
+			return true
+		}
+	}
+	return false
+}
+
+func (m TypesMap) SimplifyMap() TypesMap {
+	newMap := NewEmptyTypesMap(2)
+
+	var hasBool bool
+	var hasTrue bool
+	var hasFalse bool
+	var hasObject bool
+	var hasSomeClass bool
+
+	for typ := range m.m {
+		switch typ {
+		case "bool":
+			hasBool = true
+		case "true":
+			hasTrue = true
+		case "false":
+			hasFalse = true
+		case "object":
+			hasObject = true
+		default:
+			if !IsTrivialType(typ) {
+				hasSomeClass = true
+			}
+
+			newMap.AppendString(typ)
+		}
+	}
+
+	if hasObject && !hasSomeClass {
+		newMap.AppendString("object")
+	}
+
+	if hasBool || hasFalse || hasTrue {
+		newMap.AppendString("bool")
+	}
+
+	return newMap
+}
+
+func (m TypesMap) ContainsMixed() bool {
+	for typ := range m.m {
+		if strings.Contains(typ, "mixed") || strings.Contains(typ, "undefined") || strings.Contains(typ, "empty_array") {
 			return true
 		}
 	}

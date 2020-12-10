@@ -993,9 +993,173 @@ func (d *RootWalker) checkOldStyleConstructor(meth *ir.ClassMethodStmt, nm strin
 	}
 }
 
+func Extends(className string, checkedClassName string) bool {
+	class, ok := meta.Info.GetClass(className)
+	if !ok {
+		return false
+	}
+
+	if class.Parent == "" {
+		return false
+	}
+	if class.Parent == checkedClassName {
+		return true
+	}
+
+	extends := Extends(class.Parent, checkedClassName)
+	return extends
+}
+
+func ArrayTypeDim(typ string) (int64, string) {
+	var count int64
+	for strings.HasSuffix(typ, "[]") {
+		typ = strings.TrimSuffix(typ, "[]")
+		count++
+	}
+	return count, typ
+}
+
+func ContainsMap(phpdoc meta.TypesMap, actual meta.TypesMap) (bool, []string) {
+	phpdoc = phpdoc.SimplifyMap()
+	actual = actual.SimplifyMap()
+
+	// if actual.Len() > phpdoc.Len() || phpdoc.Len() > actual.Len() {
+	// 	return false
+	// }
+
+	var missingTypes []string
+
+	var contains = true
+	var implements = false
+	var extends = false
+	actual.Iterate(func(actualType string) {
+		// если в какой-то момент мы поняли что типы несовместимы
+		// то проверять дальше нет смысла
+		// if !contains {
+		// 	return
+		// }
+
+		// если тип тривиальный, то он должен присутствовать сам по себе
+		if meta.IsTrivialType(actualType) {
+			// соответственно если такого типа нет, то это означает,
+			// что типы точно не совместимы
+			if !phpdoc.Contains(actualType) {
+				contains = false
+
+				missingTypes = append(missingTypes, actualType)
+			}
+			return
+		}
+
+		// если тип не произвольный, то все сложнее
+		// классы могут наследоваться или могут реализовывать интерфейс
+		// В таком случае нам необходимо пройти по всем типам в phpdoc
+		phpdoc.Iterate(func(phpdocType string) {
+			// если класс уже реализует некоторый интерфейс из phpdoc
+			// или наследует класс, то это говорит о том, что все в порядке
+			// и дальше этот класс можно не проверять
+			if implements || extends {
+				return
+			}
+
+			// если тип тривиален, то сравнивать его с нетривиальным не имеет смысла
+			if meta.IsTrivialType(phpdocType) {
+				return
+			}
+
+			// снимаем все уровни массивов, так как если возвращается
+			// массив классов реализующих интерфейс, а в phpdoc возвращаемый
+			// тип это массив интерфейсов, то все в порядке
+			actualTypeDim, actualType := ArrayTypeDim(actualType)
+			phpdocTypeDim, phpdocType := ArrayTypeDim(phpdocType)
+			// если уровни типов не равны, то эти типы не могут реализовывать
+			// или наследовать друг друга
+			if actualTypeDim != phpdocTypeDim {
+				return
+			}
+
+			// в первую очередь проверяем не реализует ли класс интерфейс
+			// это довольно распространено, когда функция возвращает некоторый интерфейс,
+			// а по факту возвращаются классы реализующие этот интерфейс
+			if solver.Implements(actualType, phpdocType) {
+				implements = true
+				return
+			}
+
+			// во вторых класс может наследоваться от другого класса, тогда
+			// если в phpdoc будет базовый класс, а возвращается наследник
+			// то это нормально
+			if Extends(actualType, phpdocType) {
+				extends = true
+				return
+			}
+		})
+
+		// если класс не наследуется и не реализует некоторый интерфейс
+		// это означает, что типы не совместимы
+		if !implements && !extends {
+			contains = false
+			missingTypes = append(missingTypes, actualType)
+		}
+
+		// сбрасываем флаги, чтобы проверять следующие типы
+		implements = false
+		extends = false
+	})
+
+	//
+	// actual.Iterate(func(typ string) {
+	// 	if !phpdoc.Contains(typ) {
+	// 		switch typ {
+	// 		case "bool":
+	// 			if !phpdoc.Contains("true") && !phpdoc.Contains("false") {
+	// 				contains = false
+	// 			}
+	// 		case "true", "false":
+	// 			if !phpdoc.Contains("bool") {
+	// 				contains = false
+	// 			}
+	// 		default:
+	// 			var implements bool
+	// 			var extends bool
+	// 			if !meta.IsTrivialType(typ) {
+	// 				phpdoc.Iterate(func(typ2 string) {
+	// 					if strings.HasSuffix(typ2, "[]") {
+	// 						typ2 = strings.TrimSuffix(typ2, "[]")
+	// 						typ = strings.TrimSuffix(typ, "[]")
+	// 					}
+	//
+	// 					if typ2 == "\\VK\\Ads\\Rank\\Counters\\Storage\\Accessors\\RankCounterStorageAccessorInterface" {
+	// 						fmt.Print()
+	// 					}
+	//
+	// 					if solver.Implements(typ, typ2) {
+	// 						implements = true
+	// 					}
+	// 					if Extends(typ, typ2) {
+	// 						extends = true
+	// 					}
+	// 				})
+	// 			}
+	// 			if !implements && !extends {
+	// 				contains = false
+	// 			}
+	// 		}
+	// 	}
+	// })
+
+	return contains, missingTypes
+}
+
+//  public function getStorageAccessor($counter_type) {
+
 func (d *RootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 	nm := meth.MethodName.Value
 	_, insideInterface := d.currentClassNode.(*ir.InterfaceStmt)
+
+	if strings.Contains(nm, "method2") {
+		fmt.Print()
+	}
 
 	d.checkOldStyleConstructor(meth, nm)
 
@@ -1082,6 +1246,34 @@ func (d *RootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 	exitFlags := funcInfo.prematureExitFlags
 	if nm == `__construct` {
 		d.checkParentConstructorCall(meth.MethodName, funcInfo.callsParentConstructor)
+	}
+
+	if meta.IsIndexingComplete() {
+		actualReturnTypesResolved := actualReturnTypes.Clone()
+		if !actualReturnTypes.IsResolved() {
+			actualReturnTypesResolved = meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, actualReturnTypes, solver.ResolverMap{}))
+		}
+
+		phpdocReturnTypeResolved := phpdocReturnType.Clone()
+		if !phpdocReturnType.IsResolved() {
+			phpdocReturnTypeResolved = meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, phpdocReturnType, solver.ResolverMap{}))
+		}
+
+		withoutMixed := !actualReturnTypesResolved.ContainsMixed() && !phpdocReturnTypeResolved.ContainsMixed()
+
+		if withoutMixed && !phpdocReturnTypeResolved.IsEmpty() {
+			contains, missingTypes := ContainsMap(phpdocReturnTypeResolved, actualReturnTypesResolved)
+			if !contains {
+				missing := strings.Join(missingTypes, ", ")
+				if missing != "" {
+					missing = "\nmissing next types: " + missing
+				}
+				d.Report(meth, LevelWarning, "returnType", `The actual return types for function %s are not the same as those in PHPDoc:  %s
+      actual: %s
+      PHPDoc: %s
+`, nm, missing, actualReturnTypesResolved, phpdocReturnTypeResolved)
+			}
+		}
 	}
 
 	d.addScope(meth, sc)
@@ -1611,6 +1803,36 @@ func (d *RootWalker) enterFunction(fun *ir.FunctionStmt) bool {
 	actualReturnTypes := funcInfo.returnTypes
 	exitFlags := funcInfo.prematureExitFlags
 	d.addScope(fun, sc)
+
+	if meta.IsIndexingComplete() {
+		actualReturnTypesResolved := actualReturnTypes.Clone()
+		if !actualReturnTypes.IsResolved() {
+			actualReturnTypesResolved = meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, actualReturnTypes, solver.ResolverMap{}))
+		}
+
+		phpdocReturnTypeResolved := phpdocReturnType.Clone()
+		if !phpdocReturnType.IsResolved() {
+			phpdocReturnTypeResolved = meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, phpdocReturnType, solver.ResolverMap{}))
+		}
+
+		withoutMixed := !actualReturnTypesResolved.ContainsMixed() && !phpdocReturnTypeResolved.ContainsMixed()
+
+		if withoutMixed && !phpdocReturnTypeResolved.IsEmpty() {
+			contains, missingTypes := ContainsMap(phpdocReturnTypeResolved, actualReturnTypesResolved)
+			if !contains {
+				missing := strings.Join(missingTypes, ", ")
+				if missing != "" {
+					missing = "missing types (" + missing + ")"
+				}
+				if !contains {
+					d.Report(fun, LevelWarning, "returnType", `The actual return types for function %s are not the same as those in PHPDoc %s
+      actual: %s
+      PHPDoc: %s
+`, nm, missing, actualReturnTypesResolved, phpdocReturnTypeResolved)
+				}
+			}
+		}
+	}
 
 	returnType := meta.MergeTypeMaps(phpdocReturnType, actualReturnTypes, specifiedReturnType)
 	if returnType.IsEmpty() {
