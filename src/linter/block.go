@@ -570,13 +570,22 @@ func (b *BlockWalker) handleEmpty(s *ir.EmptyExpr) bool {
 // so it can be examined at the call site.
 func (b *BlockWalker) withNewContext(action func()) *blockContext {
 	oldCtx := b.ctx
-	newCtx := copyBlockContext(b.ctx)
+	newCtx := CopyBlockContext(b.ctx)
 
 	b.ctx = newCtx
 	action()
 	b.ctx = oldCtx
 
 	return newCtx
+}
+
+func (b *BlockWalker) withSpecificContext(ctx *blockContext, action func()) {
+	oldCtx := b.ctx
+	newCtx := ctx
+
+	b.ctx = newCtx
+	action()
+	b.ctx = oldCtx
 }
 
 func (b *BlockWalker) handleTry(s *ir.TryStmt) bool {
@@ -1434,7 +1443,7 @@ func (b *BlockWalker) handleTernary(e *ir.TernaryExpr) bool {
 	return false
 }
 
-func (b *BlockWalker) handleIf(s *ir.IfStmt) bool {
+func (b *BlockWalker) handleIf1(s *ir.IfStmt) bool {
 	var varsToDelete []ir.Node
 	var varsToReplace []varToReplace
 	customMethods := len(b.ctx.customMethods)
@@ -1534,6 +1543,201 @@ func (b *BlockWalker) handleIf(s *ir.IfStmt) bool {
 		var flags meta.VarFlags
 		flags.SetAlwaysDefined(defCounts[nm] == linksCount)
 		b.ctx.sc.AddVarName(nm, types, "all branches", flags)
+	}
+
+	return false
+}
+
+func (b *BlockWalker) handleIf(s *ir.IfStmt) bool {
+	// var varsToDelete []ir.Node
+	var varsToReplace []varToReplace
+	customMethods := len(b.ctx.customMethods)
+	customFunctions := len(b.ctx.customFunctions)
+	// Remove all isset'ed variables after we're finished with this if statement.
+	defer func() {
+		// for _, v := range varsToDelete {
+		// 	b.ctx.sc.DelVar(v, "isset/!empty")
+		// }
+		// for _, v := range varsToReplace {
+		// 	b.ctx.sc.ReplaceVar(v.Node, v.Type, "type_revert", meta.VarAlwaysDefined)
+		// }
+		b.ctx.customMethods = b.ctx.customMethods[:customMethods]
+		b.ctx.customFunctions = b.ctx.customFunctions[:customFunctions]
+	}()
+
+	var linksCount int
+	var contexts []*blockContext
+
+	// $a is int[]|int|null
+	// if (is_array($a)) {
+	//    exprtype($a, "int[]");
+	// } else if (is_integer($a)) {
+	//    exprtype($a, "int");
+	// } else {
+	//    exprtype($a, "null");
+	// }
+	conditionReverseCtx := CopyBlockContext(b.ctx)
+	conditionCtx := b.withNewContext(func() {
+		a := &andWalker{b: b, reverseCtx: conditionReverseCtx}
+		s.Cond.Walk(a)
+		varsToReplace = append(varsToReplace, a.varsToReplace...)
+	})
+	contexts = append(contexts, conditionCtx)
+
+	if s.Stmt != nil {
+		b.withSpecificContext(conditionCtx, func() {
+			s.Stmt.Walk(b)
+		})
+
+		if conditionCtx.exitFlags == 0 {
+			linksCount += 1
+		}
+	} else {
+		linksCount++
+	}
+
+	for _, n := range s.ElseIf {
+		if elsif, ok := n.(*ir.ElseIfStmt); ok {
+
+			elseIfConditionReverseCtx := CopyBlockContext(conditionReverseCtx)
+			elseIfConditionCtx := CopyBlockContext(conditionReverseCtx)
+			b.withSpecificContext(elseIfConditionCtx, func() {
+				a := &andWalker{b: b, reverseCtx: elseIfConditionReverseCtx}
+				elsif.Cond.Walk(a)
+				varsToReplace = append(varsToReplace, a.varsToReplace...)
+			})
+
+			b.withSpecificContext(elseIfConditionCtx, func() {
+				b.handleElseIf(elsif)
+				elsif.Stmt.Walk(b)
+			})
+
+			contexts = append(contexts, elseIfConditionCtx)
+
+			if elseIfConditionCtx.exitFlags == 0 {
+				linksCount += 1
+			}
+
+			conditionReverseCtx = elseIfConditionReverseCtx
+		} else {
+			n.Walk(b)
+		}
+	}
+
+	if s.Else != nil {
+		b.withSpecificContext(conditionReverseCtx, func() {
+			s.Else.Walk(b)
+		})
+
+		if conditionReverseCtx.exitFlags == 0 {
+			linksCount += 1
+		}
+	} else {
+		linksCount++
+	}
+	contexts = append(contexts, conditionReverseCtx)
+
+	// first condition is always executed, so run it in base context
+	// if s.Cond != nil {
+	// 	walkCond(s.Cond)
+	// }
+	//
+	// var contexts []*blockContext
+	//
+	// walk := func(n ir.Node) (links int) {
+	// 	// handle if (...) smth(); else other_thing(); // without braces
+	// 	if els, ok := n.(*ir.ElseStmt); ok {
+	// 		b.addStatement(els.Stmt)
+	// 	} else if elsif, ok := n.(*ir.ElseIfStmt); ok {
+	// 		b.addStatement(elsif.Stmt)
+	// 	} else {
+	// 		b.addStatement(n)
+	// 	}
+	//
+	// 	ctx := b.withNewContext(func() {
+	// 		if elsif, ok := n.(*ir.ElseIfStmt); ok {
+	// 			walkCond(elsif.Cond)
+	// 			b.handleElseIf(elsif)
+	// 			elsif.Stmt.Walk(b)
+	// 		} else {
+	// 			n.Walk(b)
+	// 		}
+	// 		b.r.addScope(n, b.ctx.sc)
+	// 	})
+	//
+	// 	contexts = append(contexts, ctx)
+	//
+	// 	if ctx.exitFlags != 0 {
+	// 		return 0
+	// 	}
+	//
+	// 	return 1
+	// }
+
+	// if s.Stmt != nil {
+	// 	linksCount += walk(s.Stmt)
+	// } else {
+	// 	linksCount++
+	// }
+	//
+	// for _, n := range s.ElseIf {
+	// 	linksCount += walk(n)
+	// }
+	//
+	// if s.Else != nil {
+	// 	linksCount += walk(s.Else)
+	// } else {
+	// 	linksCount++
+	// }
+
+	b.propagateFlagsFromBranches(contexts, linksCount)
+
+	varTypes := make(map[string]meta.TypesMap, b.ctx.sc.Len())
+	defCounts := make(map[string]int, b.ctx.sc.Len())
+
+	// for _, variable := range varsToReplace {
+	// 	varType, found := variable.ctx.sc.GetVarType(variable.Node)
+	// 	if !found {
+	// 		continue
+	// 	}
+	//
+	// 	variable.Type.Iterate(func(typ string) {
+	// 		varType.Delete(typ)
+	// 	})
+	// }
+
+	// if len(contexts) > 0 {
+	// 	contexts = contexts[1:]
+	// }
+
+	for _, ctx := range contexts {
+		if ctx.exitFlags != 0 {
+			continue
+		}
+
+		ctx.sc.Iterate(func(nm string, typ meta.TypesMap, flags meta.VarFlags) {
+			varTypes[nm] = varTypes[nm].Append(typ)
+			if flags.IsAlwaysDefined() {
+				defCounts[nm]++
+			}
+		})
+	}
+
+	for nm, types := range varTypes {
+		var flags meta.VarFlags
+		flags.SetAlwaysDefined(defCounts[nm] == linksCount)
+		b.ctx.sc.ReplaceVarName(nm, types, "all branches", flags)
+	}
+
+	for _, variable := range varsToReplace {
+		varType, found := b.ctx.sc.GetVarType(variable.Node)
+		if !found {
+			continue
+		}
+
+		variable.Type.Iterate(func(typ string) {
+			varType.Delete(typ)
+		})
 	}
 
 	return false

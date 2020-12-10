@@ -335,13 +335,13 @@ function test1($data) {
     $s = 123;
     exprtype($s, 'precise int');
   }
-  exprtype($s, 'precise float|int|string');
+  exprtype($s, 'precise float|int');
 
   if ($data['key2']) {
     $s = $data['x'];
     exprtype($s, 'mixed');
   }
-  exprtype($s, 'float|int|mixed|string');
+  exprtype($s, 'float|int|mixed');
 }
 
 function test2($data, int $i) {
@@ -353,10 +353,11 @@ function test2($data, int $i) {
 
   if ($data) {
     $s = \UnknownClass::UNKNOWN_CONST;
+    exprtype($s, 'mixed');
   } else {
     $s = 12;
   }
-  exprtype($s, 'int|string');
+  exprtype($s, 'int');
 }
 `
 	runExprTypeTest(t, &exprTypeTestParams{code: code})
@@ -2727,7 +2728,129 @@ function f() {
     exprtype($fa, "mixed[]");
   }
   exprtype($fa, "int|null");
+
+  $d1 = getIntArrayOrNull();
+  if (is_array($d1)) {
+    exprtype($d1, "int[]");
+  } else {
+	exprtype($d1, "null");
+  }
 }
+`
+	runExprTypeTest(t, &exprTypeTestParams{code: code})
+}
+
+func TestIsArrayType1(t *testing.T) {
+	code := `<?php
+class Foo {}
+
+/** @return int|null */
+function getIntOrNull() {}
+
+/** @return int[]|int|null */
+function getIntArrayOrIntOrNull() {}
+
+/** @return int[]|string[] */
+function getIntOrStringArray() {}
+
+/** @return mixed */
+function getMixed() {}
+
+function f() {
+//   $foo = new Foo;
+//   if (1) {
+//     $foo = [new Foo];
+//   }
+//   if (is_array($foo)) {
+//     exprtype($foo, "\Foo[]");
+//   }
+// 	
+//   
+//   
+//   $d1 = getIntArrayOrIntOrNull();
+//   if (is_array($d1)) {
+//     exprtype($d1, "int[]");
+//   } else {
+// 	exprtype($d1, "int|null");
+//   }
+//   exprtype($d1, "int|int[]|null");
+//   
+//   
+//   
+//   $d4 = getIntArrayOrIntOrNull();
+//   if (is_array($d4)) {
+//     exprtype($d4, "int[]");
+//   } else if(is_integer($d4)) {
+//     exprtype($d4, "int");
+//   } else {
+// 	exprtype($d4, "null");
+// 	$d4 = 100.56;
+//   }
+//   exprtype($d4, "float|int|int[]");
+//   
+//   $d3 = null;
+//   if (is_integer($d3)) {
+// 	exprtype($d3, "mixed");
+//     $d3 = getMixed();
+//   } else if (is_null($d3)) {
+//     exprtype($d3, "null");
+//     $d3 = new Foo();
+//   }
+//   exprtype($d3, "\Foo|mixed");
+//   
+// 
+//   $d2 = getIntOrNull();
+//   if (is_array($d2)) {
+//     exprtype($d2, "mixed[]");
+// 	// $d2 = new Foo;
+//   }
+//   exprtype($d2, "int|null");
+// 
+//   $da = getIntOrStringArray();
+//   if (is_array($da)) {
+//     exprtype($da, "int[]|string[]");
+//   }
+//   exprtype($da, "int[]|string[]");
+//   GLOBAL $xx;
+//   
+//   if (0):
+//   ENDIF;
+// 
+//   $_ = $xx InstanceOf TheClass;
+// 
+//   exprtype($xx, "mixed");
+}
+
+
+class Foo {}
+
+function f1($cond) {
+  global $g;
+  $x = $g;
+  if ($x instanceof Foo) {
+    // Do nothing.
+  }
+  if ($cond) {
+    $_ = $x; // Use $x
+    if ($x instanceof Foo) {
+      // Should not warn about unused var.
+    }
+  }
+}
+
+function f2() {
+  global $v;
+  return $v instanceof Foo;
+}
+
+function f3() {
+  global $v;
+  if ($v instanceof Foo) {
+    return 1;
+  }
+  return 0;
+}
+
 `
 	runExprTypeTest(t, &exprTypeTestParams{code: code})
 }

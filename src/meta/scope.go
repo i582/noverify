@@ -262,6 +262,19 @@ func (s *Scope) GetVarNameType(name string) (m TypesMap, ok bool) {
 	return res.typesMap, ok
 }
 
+func (s *Scope) GetVarType(n ir.Node) (m TypesMap, ok bool) {
+	name, ok := scopeVarName(n)
+	if !ok {
+		return TypesMap{}, false
+	}
+
+	res, ok := s.vars[name]
+	if !ok {
+		return TypesMap{}, false
+	}
+	return res.typesMap, ok
+}
+
 // MaybeHaveVarName checks that variable is present in the scope (it may be not always defined)
 func (s *Scope) MaybeHaveVarName(name string) bool {
 	_, ok := s.vars[name]

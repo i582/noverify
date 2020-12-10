@@ -310,6 +310,11 @@ func (m TypesMap) Append(n TypesMap) TypesMap {
 	return TypesMap{m: mm, flags: flags}
 }
 
+func (m TypesMap) Delete(typ string) TypesMap {
+	delete(m.m, typ)
+	return m
+}
+
 // String returns string representation of a map
 func (m TypesMap) String() string {
 	if len(m.m) == 1 {

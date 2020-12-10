@@ -16,11 +16,14 @@ import (
 type andWalker struct {
 	b *BlockWalker
 
+	reverseCtx *blockContext
+
 	varsToDelete  []ir.Node
 	varsToReplace []varToReplace
 }
 
 type varToReplace struct {
+	ctx  *blockContext
 	Node ir.Node
 	Type meta.TypesMap
 }
@@ -46,6 +49,65 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 			if ok {
 				a.b.ctx.addCustomFunction(lit.Value)
 			}
+
+		case nm.Value == "is_null":
+			if !meta.IsIndexingComplete() {
+				return false
+			}
+
+			varNode := n.Arg(0).Expr
+			varType := solver.ExprType(a.b.ctx.sc, a.b.r.ctx.st, varNode)
+			if varType.Contains("null") {
+				a.b.ctx.sc.ReplaceVar(varNode, meta.NewTypesMap("null"), "is_null", meta.VarAlwaysDefined)
+
+				var typeWithoutNull meta.TypesMap
+
+				varType.Iterate(func(typ string) {
+					if typ != "null" {
+						typeWithoutNull = typeWithoutNull.AppendString(typ)
+					}
+				})
+
+				a.reverseCtx.sc.ReplaceVar(varNode, typeWithoutNull, "is_null", meta.VarAlwaysDefined)
+			} else {
+				a.b.ctx.sc.ReplaceVar(varNode, meta.MixedType, "is_null", meta.VarAlwaysDefined)
+				a.reverseCtx.sc.ReplaceVar(varNode, varType, "is_null", meta.VarAlwaysDefined)
+				a.varsToReplace = append(a.varsToReplace, varToReplace{
+					ctx:  a.b.ctx,
+					Node: varNode,
+					Type: meta.MixedType,
+				})
+			}
+
+		case nm.Value == "is_integer":
+			if !meta.IsIndexingComplete() {
+				return false
+			}
+
+			varNode := n.Arg(0).Expr
+			varType := solver.ExprType(a.b.ctx.sc, a.b.r.ctx.st, varNode)
+			if varType.Contains("int") {
+				a.b.ctx.sc.ReplaceVar(varNode, meta.NewTypesMap("int"), "is_integer", meta.VarAlwaysDefined)
+
+				var typeWithoutInt meta.TypesMap
+
+				varType.Iterate(func(typ string) {
+					if typ != "int" {
+						typeWithoutInt = typeWithoutInt.AppendString(typ)
+					}
+				})
+
+				a.reverseCtx.sc.ReplaceVar(varNode, typeWithoutInt, "is_integer", meta.VarAlwaysDefined)
+			} else {
+				a.b.ctx.sc.ReplaceVar(varNode, meta.MixedType, "is_integer", meta.VarAlwaysDefined)
+				a.reverseCtx.sc.ReplaceVar(varNode, varType, "is_integer", meta.VarAlwaysDefined)
+				a.varsToReplace = append(a.varsToReplace, varToReplace{
+					ctx:  a.b.ctx,
+					Node: varNode,
+					Type: meta.MixedType,
+				})
+			}
+
 		case nm.Value == "is_array":
 			if !meta.IsIndexingComplete() {
 				return false
@@ -54,28 +116,42 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 			varNode := n.Arg(0).Expr
 			varType := solver.ExprType(a.b.ctx.sc, a.b.r.ctx.st, varNode)
 
-			// In case we have at least one type representing an array,
-			// we keep only the types representing arrays.
-			// int|Foo[] -> Foo[]
-			if varType.HasAtLeastOneArray() {
+			if varType.HasOnlyArrays() {
+				a.reverseCtx.sc.ReplaceVar(varNode, meta.MixedType, "is_array", meta.VarAlwaysDefined)
+				a.varsToReplace = append(a.varsToReplace, varToReplace{
+					ctx:  a.reverseCtx,
+					Node: varNode,
+					Type: meta.MixedType,
+				})
+			} else if varType.HasAtLeastOneArray() {
+				// In case we have at least one type representing an array,
+				// we keep only the types representing arrays.
+				// int|Foo[] -> Foo[]
+
 				var typeWithOnlyArrays meta.TypesMap
+				var typeWithoutArrays meta.TypesMap
 
 				varType.Iterate(func(typ string) {
 					if strings.HasSuffix(typ, "[]") {
 						typeWithOnlyArrays = typeWithOnlyArrays.AppendString(typ)
+					} else {
+						typeWithoutArrays = typeWithoutArrays.AppendString(typ)
 					}
 				})
 
 				a.b.ctx.sc.ReplaceVar(varNode, typeWithOnlyArrays, "is_array", meta.VarAlwaysDefined)
-				a.varsToReplace = append(a.varsToReplace, varToReplace{
-					Node: varNode,
-					Type: varType,
-				})
+
+				if typeWithoutArrays.IsEmpty() {
+					typeWithoutArrays = meta.MixedType
+				}
+				a.reverseCtx.sc.ReplaceVar(varNode, typeWithoutArrays, "is_array", meta.VarAlwaysDefined)
+
 			} else if !varType.HasOnlyArrays() { // If we have no arrays at all, the type becomes mixed[].
 				a.b.ctx.sc.ReplaceVar(varNode, meta.NewTypesMap("mixed[]"), "is_array", meta.VarAlwaysDefined)
 				a.varsToReplace = append(a.varsToReplace, varToReplace{
+					ctx:  a.b.ctx,
 					Node: varNode,
-					Type: varType,
+					Type: meta.NewTypesMap("mixed[]"),
 				})
 			}
 		}
@@ -112,7 +188,9 @@ func (a *andWalker) EnterNode(w ir.Node) (res bool) {
 		if className, ok := solver.GetClassName(a.b.r.ctx.st, n.Class); ok {
 			switch v := n.Expr.(type) {
 			case *ir.Var, *ir.SimpleVar:
-				a.b.ctx.sc.AddVar(v, meta.NewTypesMap(className), "instanceof", 0)
+				a.b.ctx.sc.ReplaceVar(v, meta.NewTypesMap(className), "instanceof", meta.VarAlwaysDefined)
+				varType := solver.ExprType(a.b.ctx.sc, a.b.r.ctx.st, v)
+				a.reverseCtx.sc.ReplaceVar(v, varType, "instanceof", meta.VarAlwaysDefined)
 			default:
 				a.b.ctx.customTypes = append(a.b.ctx.customTypes, solver.CustomType{
 					Node: n.Expr,
