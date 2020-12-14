@@ -563,6 +563,12 @@ $foo = new Foo();`,
 			Default: true,
 			Comment: `Report the use of variables that were supposed to be unused, like $ _.`,
 		},
+
+		{
+			Name:    "typeCheckReturn",
+			Default: true,
+			Comment: ``,
+		},
 	}
 
 	for _, info := range allChecks {

@@ -2039,3 +2039,91 @@ echo UNDEFINED_CONST;
 	test.Expect = []string{`Undefined constant UNDEFINED_CONST`}
 	test.RunAndMatch()
 }
+
+func TestNewFunctionReturnExprType(t *testing.T) {
+	test := linttest.NewSuite(t)
+	test.AddFile(`<?php
+class Foo {}
+
+/**
+ * @return int
+ * Error, return type has no objects, but object returned
+ */
+function f1() {
+	return new Foo;
+}
+
+
+/**
+ * @return int
+ * Ok
+ */
+function f2(): float {
+	return 5;
+}
+
+/**
+ * @return int
+ * Error, return array
+ */
+function f21(): float {
+	return [1,2,3];
+}
+
+/**
+ * @return int[]
+ * Error, return array
+ */
+function f22(): array {
+	return 10;
+}
+
+/**
+ * @return Foo
+ * Error, return trivial
+ */
+function f23(): array {
+	return 10;
+}
+
+/**
+ * @return Foo
+ * Ok
+ */
+function f24(): array {
+	return [1,2,3];
+}
+
+/**
+ * Without @return, but with type hint
+ * Error, return type has no objects, but object returned
+ */
+function f3(): float {
+	if (1) {
+		return new Foo;
+	}
+	return 5;
+}
+
+
+/**
+ * Without @return and type hint
+ * All ok, no phpdoc and checking
+ */
+function f4() {
+	if (1) {
+		return 10;
+	}
+	return new Foo;
+}
+
+`)
+	test.Expect = []string{
+		`actual types not compatible with phpdoc @return types (an array is returned when the @return contains no arrays)`,
+		`actual types not compatible with phpdoc @return types (an trivial is returned when the @return contains no trivial)`,
+		`actual types not compatible with phpdoc @return types (an trivial is returned when the @return contains no trivial)`,
+		`actual types not compatible with phpdoc @return types (an object is returned when the @return contains no objects)`,
+		`actual types not compatible with phpdoc @return types (an object is returned when the @return contains no objects)`,
+	}
+	test.RunAndMatch()
+}

@@ -1087,10 +1087,35 @@ func (d *RootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 	d.addScope(meth, sc)
 
 	// TODO: handle duplicate method
-	returnType := meta.MergeTypeMaps(phpdocReturnType, actualReturnTypes, specifiedReturnType)
-	if returnType.IsEmpty() {
-		returnType = meta.VoidType
+
+	var returnTypes meta.TypesMap
+	if !phpdocReturnType.IsEmpty() || !specifiedReturnType.IsEmpty() {
+		returnTypes = meta.MergeTypeMaps(phpdocReturnType, specifiedReturnType)
+
+		if meta.IsIndexingComplete() {
+			docReturnTypesResolved := meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, returnTypes, solver.ResolverMap{}))
+			actualReturnTypesResolved := meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, actualReturnTypes, solver.ResolverMap{}))
+
+			if ok, errors := d.typesMapIsCompatible(actualReturnTypesResolved, docReturnTypesResolved); !ok {
+				for _, err := range errors {
+					d.Report(meth, LevelError, "typeCheckReturn", err)
+				}
+			}
+		}
+
+	} else {
+		returnTypes = actualReturnTypes
 	}
+
+	// returnType := meta.MergeTypeMaps(phpdocReturnType, actualReturnTypes, specifiedReturnType)
+	if returnTypes.IsEmpty() {
+		returnTypes = meta.VoidType
+	}
+
+	// returnType := meta.MergeTypeMaps(phpdocReturnType, actualReturnTypes, specifiedReturnType)
+	// if returnType.IsEmpty() {
+	// 	returnType = meta.VoidType
+	// }
 	var funcFlags meta.FuncFlags
 	if modif.static {
 		funcFlags |= meta.FuncStatic
@@ -1108,7 +1133,7 @@ func (d *RootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 		Params:       params,
 		Name:         nm,
 		Pos:          d.getElementPos(meth),
-		Typ:          returnType.Immutable(),
+		Typ:          returnTypes.Immutable(),
 		MinParamsCnt: minParamsCnt,
 		AccessLevel:  modif.accessLevel,
 		Flags:        funcFlags,
@@ -1117,7 +1142,7 @@ func (d *RootWalker) enterClassMethod(meth *ir.ClassMethodStmt) bool {
 	})
 
 	if nm == "getIterator" && meta.IsIndexingComplete() && solver.Implements(d.ctx.st.CurrentClass, `\IteratorAggregate`) {
-		implementsTraversable := returnType.Find(func(typ string) bool {
+		implementsTraversable := returnTypes.Find(func(typ string) bool {
 			return solver.Implements(typ, `\Traversable`)
 		})
 
@@ -1576,6 +1601,85 @@ func (d *RootWalker) checkMisspellings(n ir.Node, s string, label string, skip f
 	}
 }
 
+// HasAtLeastOneArray checks if map contains at least one array of any type
+func HasAtLeastOneArray(m meta.TypesMap) bool {
+	if m.Len() == 0 {
+		return false
+	}
+
+	var contains bool
+	m.Iterate(func(typ string) {
+		if strings.HasSuffix(typ, "[]") {
+			contains = true
+		}
+	})
+
+	return contains
+}
+
+// HasAtLeastOneObject checks if map contains at least one any type object
+func HasAtLeastOneObject(m meta.TypesMap) bool {
+	if m.Len() == 0 {
+		return false
+	}
+
+	var contains bool
+	m.Iterate(func(typ string) {
+		if strings.HasPrefix(typ, `\`) || typ == "self" || typ == "static" || typ == "object" {
+			contains = true
+		}
+	})
+
+	return contains
+}
+
+// HasAtLeastOneTrivial checks if map contains at least one any type trivial
+func HasAtLeastOneTrivial(m meta.TypesMap) bool {
+	if m.Len() == 0 {
+		return false
+	}
+
+	var contains bool
+	m.Iterate(func(typ string) {
+		if !strings.HasPrefix(typ, `\`) && !strings.HasSuffix(typ, "[]") && typ != "self" && typ != "static" && typ != "object" {
+			contains = true
+		}
+	})
+
+	return contains
+}
+
+func (d *RootWalker) typesMapIsCompatible(actual, phpdoc meta.TypesMap) (bool, []string) {
+	var errors []string
+
+	actualContainsMixed := actual.Contains("mixed") || actual.Contains("mixed[]")
+	phpdocContainsMixed := phpdoc.Contains("mixed") || phpdoc.Contains("mixed[]")
+	if actualContainsMixed || phpdocContainsMixed {
+		return true, nil
+	}
+
+	actual.Iterate(func(actualType string) {
+		switch {
+		case strings.Contains(actualType, "[]"):
+			if !HasAtLeastOneArray(phpdoc) {
+				errors = append(errors, fmt.Sprintf("actual types (%s) not compatible with phpdoc @return types (%s) (an array is returned when the @return contains no arrays)", actual, phpdoc))
+			}
+
+		case strings.HasPrefix(actualType, `\`) || actualType == "self" || actualType == "static" || actualType == "object":
+			if !HasAtLeastOneObject(phpdoc) {
+				errors = append(errors, fmt.Sprintf("actual types (%s) not compatible with phpdoc @return types (%s) (an object is returned when the @return contains no objects)", actual, phpdoc))
+			}
+
+		default:
+			if !HasAtLeastOneTrivial(phpdoc) {
+				errors = append(errors, fmt.Sprintf("actual types (%s) not compatible with phpdoc @return types (%s) (an trivial is returned when the @return contains no trivials)", actual, phpdoc))
+			}
+		}
+	})
+
+	return len(errors) == 0, errors
+}
+
 func (d *RootWalker) enterFunction(fun *ir.FunctionStmt) bool {
 	nm := d.ctx.st.Namespace + `\` + fun.FunctionName.Value
 	pos := ir.GetPosition(fun)
@@ -1612,9 +1716,28 @@ func (d *RootWalker) enterFunction(fun *ir.FunctionStmt) bool {
 	exitFlags := funcInfo.prematureExitFlags
 	d.addScope(fun, sc)
 
-	returnType := meta.MergeTypeMaps(phpdocReturnType, actualReturnTypes, specifiedReturnType)
-	if returnType.IsEmpty() {
-		returnType = meta.VoidType
+	var returnTypes meta.TypesMap
+	if !phpdocReturnType.IsEmpty() || !specifiedReturnType.IsEmpty() {
+		returnTypes = meta.MergeTypeMaps(phpdocReturnType, specifiedReturnType)
+
+		if meta.IsIndexingComplete() {
+			docReturnTypesResolved := meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, returnTypes, solver.ResolverMap{}))
+			actualReturnTypesResolved := meta.NewTypesMapFromMap(solver.ResolveTypes(d.ctx.st.CurrentClass, actualReturnTypes, solver.ResolverMap{}))
+
+			if ok, errors := d.typesMapIsCompatible(actualReturnTypesResolved, docReturnTypesResolved); !ok {
+				for _, err := range errors {
+					d.Report(fun, LevelDoNotReject, "typeCheckReturn", err)
+				}
+			}
+		}
+
+	} else {
+		returnTypes = actualReturnTypes
+	}
+
+	// returnType := meta.MergeTypeMaps(phpdocReturnType, actualReturnTypes, specifiedReturnType)
+	if returnTypes.IsEmpty() {
+		returnTypes = meta.VoidType
 	}
 
 	for _, param := range fun.Params {
@@ -1629,7 +1752,7 @@ func (d *RootWalker) enterFunction(fun *ir.FunctionStmt) bool {
 		Params:       params,
 		Name:         nm,
 		Pos:          d.getElementPos(fun),
-		Typ:          returnType.Immutable(),
+		Typ:          returnTypes.Immutable(),
 		MinParamsCnt: minParamsCnt,
 		Flags:        funcFlags,
 		ExitFlags:    exitFlags,
