@@ -341,7 +341,7 @@ func (p *PrettyPrinter) printNode(n ir.Node) {
 		p.printStmtHaltCompiler(n)
 	case *ir.IfStmt:
 		p.printStmtIf(n)
-	case *ir.InlineHTMLStmt:
+	case *ir.InlineHtmlStmt:
 		p.printStmtInlineHTML(n)
 	case *ir.InterfaceStmt:
 		p.printStmtInterface(n)
@@ -431,7 +431,7 @@ func (p *PrettyPrinter) printNodeRoot(n *ir.Root) {
 		stmts = stmts[1:]
 
 		switch fs := firstStmt.(type) {
-		case *ir.InlineHTMLStmt:
+		case *ir.InlineHtmlStmt:
 			writeString(p.w, fs.Value)
 			writeString(p.w, "<?php\n")
 		default:
@@ -1546,7 +1546,7 @@ func (p *PrettyPrinter) printStmtIf(n *ir.IfStmt) {
 	}
 }
 
-func (p *PrettyPrinter) printStmtInlineHTML(n *ir.InlineHTMLStmt) {
+func (p *PrettyPrinter) printStmtInlineHTML(n *ir.InlineHtmlStmt) {
 	writeString(p.w, "?>")
 	writeString(p.w, n.Value)
 	writeString(p.w, "<?php")

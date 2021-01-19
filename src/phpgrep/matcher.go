@@ -273,8 +273,8 @@ func (m *matcher) eqNode(state *matcherState, x, y ir.Node) bool {
 	case *ir.AnonClassExpr:
 		return false
 
-	case *ir.InlineHTMLStmt:
-		y, ok := y.(*ir.InlineHTMLStmt)
+	case *ir.InlineHtmlStmt:
+		y, ok := y.(*ir.InlineHtmlStmt)
 		return ok && x.Value == y.Value
 	case *ir.StaticVarStmt:
 		y, ok := y.(*ir.StaticVarStmt)

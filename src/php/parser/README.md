@@ -6,10 +6,13 @@ PHP Parser written in Go
 [![GoDoc](https://godoc.org/github.com/z7zmey/php-parser?status.svg)](https://godoc.org/github.com/z7zmey/php-parser)
 [![Build Status](https://travis-ci.org/z7zmey/php-parser.svg?branch=master)](https://travis-ci.org/z7zmey/php-parser)
 [![Go Report Card](https://goreportcard.com/badge/github.com/z7zmey/php-parser)](https://goreportcard.com/report/github.com/z7zmey/php-parser)
-[![Maintainability](https://api.codeclimate.com/v1/badges/950783b2e739db26e0ed/maintainability)](https://codeclimate.com/github/z7zmey/php-parser/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/950783b2e739db26e0ed/test_coverage)](https://codeclimate.com/github/z7zmey/php-parser/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/950783b2e739db26e0ed/maintainability)](https://codeclimate.com/github/VKCOM/noverify/src/php/parser/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/950783b2e739db26e0ed/test_coverage)](https://codeclimate.com/github/VKCOM/noverify/src/php/parser/test_coverage)
 
-This project uses [goyacc](https://godoc.org/golang.org/x/tools/cmd/goyacc) and [golex](https://github.com/cznic/golex) libraries to parse PHP sources into [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree). It can be used to write static analysis, refactoring, metrics, code style formatting tools.
+This project uses [goyacc](https://godoc.org/golang.org/x/tools/cmd/goyacc)
+and [ragel](https://www.colm.net/open-source/ragel/) tools to create PHP parser. It parses source code
+into [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree). It can be used to write static analysis, refactoring,
+metrics, code style formatting tools.
 
 #### Try it online: [demo](https://php-parser.com)
 
@@ -37,7 +40,6 @@ Usage example
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
@@ -46,9 +48,9 @@ import (
 )
 
 func main() {
-	src := bytes.NewBufferString(`<? echo "Hello world";`)
+	src := []byte(`<? echo "Hello world";`)
 
-	parser := php7.NewParser(src, "example.php")
+	parser := php7.NewParser(src, "7.4")
 	parser.Parse()
 
 	for _, e := range parser.GetErrors() {
@@ -56,8 +58,8 @@ func main() {
 	}
 
 	visitor := visitor.Dumper{
-		Writer: os.Stdout,
-		Indent: "",
+		Writer:    os.Stdout,
+		Indent:    "",
 	}
 
 	rootNode := parser.GetRootNode()
@@ -88,6 +90,7 @@ php-parser [flags] <path> ...
 
 | flag  | type |                description                   |
 |-------|------|----------------------------------------------|
+| -p    | bool | print filepath                               |
 | -d    |string| dump format: [custom, go, json, pretty-json] |
 | -r    | bool | resolve names                                |
 | -ff   | bool | parse and show free floating strings         |

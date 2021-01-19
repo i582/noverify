@@ -627,7 +627,7 @@ func NodeClone(x ir.Node) ir.Node {
 			clone.Expr = NodeClone(x.Expr)
 		}
 		return &clone
-	case *ir.InlineHTMLStmt:
+	case *ir.InlineHtmlStmt:
 		clone := *x
 		return &clone
 	case *ir.InstanceOfExpr:

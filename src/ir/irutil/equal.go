@@ -1024,8 +1024,8 @@ func NodeEqual(x, y ir.Node) bool {
 			return false
 		}
 		return true
-	case *ir.InlineHTMLStmt:
-		y, ok := y.(*ir.InlineHTMLStmt)
+	case *ir.InlineHtmlStmt:
+		y, ok := y.(*ir.InlineHtmlStmt)
 		if !ok || x == nil || y == nil {
 			return x == y
 		}

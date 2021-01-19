@@ -168,7 +168,7 @@ func GetPosition(n Node) *position.Position {
 		return n.Position
 	case *ImportExpr:
 		return n.Position
-	case *InlineHTMLStmt:
+	case *InlineHtmlStmt:
 		return n.Position
 	case *InstanceOfExpr:
 		return n.Position

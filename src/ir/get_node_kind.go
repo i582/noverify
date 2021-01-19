@@ -326,7 +326,7 @@ func GetNodeKind(x Node) NodeKind {
 		return KindIfStmt
 	case *ImportExpr:
 		return KindImportExpr
-	case *InlineHTMLStmt:
+	case *InlineHtmlStmt:
 		return KindInlineHTMLStmt
 	case *InstanceOfExpr:
 		return KindInstanceOfExpr

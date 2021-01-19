@@ -993,7 +993,7 @@ func (n *ImportExpr) Walk(v Visitor) {
 	v.LeaveNode(n)
 }
 
-func (n *InlineHTMLStmt) Walk(v Visitor) {
+func (n *InlineHtmlStmt) Walk(v Visitor) {
 	if !v.EnterNode(n) {
 		return
 	}

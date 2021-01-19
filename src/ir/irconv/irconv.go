@@ -1,22 +1,16 @@
 package irconv
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/VKCOM/noverify/src/ir"
 	"github.com/VKCOM/noverify/src/ir/irutil"
-	"github.com/VKCOM/noverify/src/php/parser/node"
-	"github.com/VKCOM/noverify/src/php/parser/node/expr"
-	"github.com/VKCOM/noverify/src/php/parser/node/expr/assign"
-	"github.com/VKCOM/noverify/src/php/parser/node/expr/binary"
-	"github.com/VKCOM/noverify/src/php/parser/node/expr/cast"
-	"github.com/VKCOM/noverify/src/php/parser/node/name"
-	"github.com/VKCOM/noverify/src/php/parser/node/scalar"
-	"github.com/VKCOM/noverify/src/php/parser/node/stmt"
+	"github.com/VKCOM/noverify/src/php/parser/pkg/ast"
 	"github.com/VKCOM/noverify/src/phpdoc"
 )
 
-func ConvertNode(n node.Node) ir.Node {
+func ConvertNode(n ast.Vertex) ir.Node {
 	c := NewConverter(phpdoc.NewTypeParser())
 	return c.ConvertNode(n)
 }
@@ -39,11 +33,11 @@ func NewConverter(typeParser *phpdoc.TypeParser) *Converter {
 	}
 }
 
-func (c *Converter) ConvertRoot(n *node.Root) *ir.Root {
+func (c *Converter) ConvertRoot(n *ast.Root) *ir.Root {
 	return c.ConvertNode(n).(*ir.Root)
 }
 
-func (c *Converter) ConvertNode(n node.Node) ir.Node {
+func (c *Converter) ConvertNode(n ast.Vertex) ir.Node {
 	c.reset()
 	return c.convNode(n)
 }
@@ -52,7 +46,7 @@ func (c *Converter) reset() {
 	c.namespace = ""
 }
 
-func (c *Converter) convNodeSlice(xs []node.Node) []ir.Node {
+func (c *Converter) convNodeSlice(xs []ast.Vertex) []ir.Node {
 	out := make([]ir.Node, len(xs))
 	for i, x := range xs {
 		out[i] = c.convNode(x)
@@ -60,503 +54,507 @@ func (c *Converter) convNodeSlice(xs []node.Node) []ir.Node {
 	return out
 }
 
-func (c *Converter) convNode(n node.Node) ir.Node {
+func (c *Converter) convNode(n ast.Vertex) ir.Node {
 	if n == nil {
 		return nil
 	}
 	switch n := n.(type) {
-	case *assign.Assign:
+	case *ast.ExprAssign:
 		if n == nil {
 			return (*ir.Assign)(nil)
 		}
 		out := &ir.Assign{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.BitwiseAnd:
+	case *ast.ExprAssignBitwiseAnd:
 		if n == nil {
 			return (*ir.AssignBitwiseAnd)(nil)
 		}
 		out := &ir.AssignBitwiseAnd{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.BitwiseOr:
+	case *ast.ExprAssignBitwiseOr:
 		if n == nil {
 			return (*ir.AssignBitwiseOr)(nil)
 		}
 		out := &ir.AssignBitwiseOr{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.BitwiseXor:
+	case *ast.ExprAssignBitwiseXor:
 		if n == nil {
 			return (*ir.AssignBitwiseXor)(nil)
 		}
 		out := &ir.AssignBitwiseXor{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Coalesce:
+	case *ast.ExprAssignCoalesce:
 		if n == nil {
 			return (*ir.AssignCoalesce)(nil)
 		}
 		out := &ir.AssignCoalesce{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Concat:
+	case *ast.ExprAssignConcat:
 		if n == nil {
 			return (*ir.AssignConcat)(nil)
 		}
 		out := &ir.AssignConcat{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Div:
+	case *ast.ExprAssignDiv:
 		if n == nil {
 			return (*ir.AssignDiv)(nil)
 		}
 		out := &ir.AssignDiv{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Minus:
+	case *ast.ExprAssignMinus:
 		if n == nil {
 			return (*ir.AssignMinus)(nil)
 		}
 		out := &ir.AssignMinus{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Mod:
+	case *ast.ExprAssignMod:
 		if n == nil {
 			return (*ir.AssignMod)(nil)
 		}
 		out := &ir.AssignMod{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Mul:
+	case *ast.ExprAssignMul:
 		if n == nil {
 			return (*ir.AssignMul)(nil)
 		}
 		out := &ir.AssignMul{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Plus:
+	case *ast.ExprAssignPlus:
 		if n == nil {
 			return (*ir.AssignPlus)(nil)
 		}
 		out := &ir.AssignPlus{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Pow:
+	case *ast.ExprAssignPow:
 		if n == nil {
 			return (*ir.AssignPow)(nil)
 		}
 		out := &ir.AssignPow{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.Reference:
+	case *ast.ExprAssignReference:
 		if n == nil {
 			return (*ir.AssignReference)(nil)
 		}
 		out := &ir.AssignReference{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.ShiftLeft:
+	case *ast.ExprAssignShiftLeft:
 		if n == nil {
 			return (*ir.AssignShiftLeft)(nil)
 		}
 		out := &ir.AssignShiftLeft{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *assign.ShiftRight:
+	case *ast.ExprAssignShiftRight:
 		if n == nil {
 			return (*ir.AssignShiftRight)(nil)
 		}
 		out := &ir.AssignShiftRight{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		out.Expression = c.convNode(n.Expression)
+		out.Variable = c.convNode(n.Var)
+		out.Expression = c.convNode(n.Expr)
 		return out
 
-	case *binary.BitwiseAnd:
+	case *ast.ExprBinaryBitwiseAnd:
 		if n == nil {
 			return (*ir.BitwiseAndExpr)(nil)
 		}
 		out := &ir.BitwiseAndExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.BitwiseOr:
+	case *ast.ExprBinaryBitwiseOr:
 		if n == nil {
 			return (*ir.BitwiseOrExpr)(nil)
 		}
 		out := &ir.BitwiseOrExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.BitwiseXor:
+	case *ast.ExprBinaryBitwiseXor:
 		if n == nil {
 			return (*ir.BitwiseXorExpr)(nil)
 		}
 		out := &ir.BitwiseXorExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.BooleanAnd:
+	case *ast.ExprBinaryBooleanAnd:
 		if n == nil {
 			return (*ir.BooleanAndExpr)(nil)
 		}
 		out := &ir.BooleanAndExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.BooleanOr:
+	case *ast.ExprBinaryBooleanOr:
 		if n == nil {
 			return (*ir.BooleanOrExpr)(nil)
 		}
 		out := &ir.BooleanOrExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Coalesce:
+	case *ast.ExprBinaryCoalesce:
 		if n == nil {
 			return (*ir.CoalesceExpr)(nil)
 		}
 		out := &ir.CoalesceExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Concat:
+	case *ast.ExprBinaryConcat:
 		if n == nil {
 			return (*ir.ConcatExpr)(nil)
 		}
 		out := &ir.ConcatExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Div:
+	case *ast.ExprBinaryDiv:
 		if n == nil {
 			return (*ir.DivExpr)(nil)
 		}
 		out := &ir.DivExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Equal:
+	case *ast.ExprBinaryEqual:
 		if n == nil {
 			return (*ir.EqualExpr)(nil)
 		}
 		out := &ir.EqualExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Greater:
+	case *ast.ExprBinaryGreater:
 		if n == nil {
 			return (*ir.GreaterExpr)(nil)
 		}
 		out := &ir.GreaterExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.GreaterOrEqual:
+	case *ast.ExprBinaryGreaterOrEqual:
 		if n == nil {
 			return (*ir.GreaterOrEqualExpr)(nil)
 		}
 		out := &ir.GreaterOrEqualExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Identical:
+	case *ast.ExprBinaryIdentical:
 		if n == nil {
 			return (*ir.IdenticalExpr)(nil)
 		}
 		out := &ir.IdenticalExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.LogicalAnd:
+	case *ast.ExprBinaryLogicalAnd:
 		if n == nil {
 			return (*ir.LogicalAndExpr)(nil)
 		}
 		out := &ir.LogicalAndExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.LogicalOr:
+	case *ast.ExprBinaryLogicalOr:
 		if n == nil {
 			return (*ir.LogicalOrExpr)(nil)
 		}
 		out := &ir.LogicalOrExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.LogicalXor:
+	case *ast.ExprBinaryLogicalXor:
 		if n == nil {
 			return (*ir.LogicalXorExpr)(nil)
 		}
 		out := &ir.LogicalXorExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Minus:
+	case *ast.ExprBinaryMinus:
 		if n == nil {
 			return (*ir.MinusExpr)(nil)
 		}
 		out := &ir.MinusExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Mod:
+	case *ast.ExprBinaryMod:
 		if n == nil {
 			return (*ir.ModExpr)(nil)
 		}
 		out := &ir.ModExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Mul:
+	case *ast.ExprBinaryMul:
 		if n == nil {
 			return (*ir.MulExpr)(nil)
 		}
 		out := &ir.MulExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.NotEqual:
+	case *ast.ExprBinaryNotEqual:
 		if n == nil {
 			return (*ir.NotEqualExpr)(nil)
 		}
 		out := &ir.NotEqualExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.NotIdentical:
+	case *ast.ExprBinaryNotIdentical:
 		if n == nil {
 			return (*ir.NotIdenticalExpr)(nil)
 		}
 		out := &ir.NotIdenticalExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Plus:
+	case *ast.ExprBinaryPlus:
 		if n == nil {
 			return (*ir.PlusExpr)(nil)
 		}
 		out := &ir.PlusExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Pow:
+	case *ast.ExprBinaryPow:
 		if n == nil {
 			return (*ir.PowExpr)(nil)
 		}
 		out := &ir.PowExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.ShiftLeft:
+	case *ast.ExprBinaryShiftLeft:
 		if n == nil {
 			return (*ir.ShiftLeftExpr)(nil)
 		}
 		out := &ir.ShiftLeftExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.ShiftRight:
+	case *ast.ExprBinaryShiftRight:
 		if n == nil {
 			return (*ir.ShiftRightExpr)(nil)
 		}
 		out := &ir.ShiftRightExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Smaller:
+	case *ast.ExprBinarySmaller:
 		if n == nil {
 			return (*ir.SmallerExpr)(nil)
 		}
 		out := &ir.SmallerExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.SmallerOrEqual:
+	case *ast.ExprBinarySmallerOrEqual:
 		if n == nil {
 			return (*ir.SmallerOrEqualExpr)(nil)
 		}
 		out := &ir.SmallerOrEqualExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *binary.Spaceship:
+	case *ast.ExprBinarySpaceship:
 		if n == nil {
 			return (*ir.SpaceshipExpr)(nil)
 		}
 		out := &ir.SpaceshipExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpTkn = n.OpTkn
 		out.Position = n.Position
 		out.Left = c.convNode(n.Left)
 		out.Right = c.convNode(n.Right)
 		return out
 
-	case *cast.Array:
+	case *ast.ExprCastArray:
 		return c.convCastExpr(n, n.Expr, "array")
-	case *cast.Bool:
+	case *ast.ExprCastBool:
 		return c.convCastExpr(n, n.Expr, "bool")
-	case *cast.Int:
+	case *ast.ExprCastInt:
 		return c.convCastExpr(n, n.Expr, "int")
-	case *cast.Double:
+	case *ast.ExprCastDouble:
 		return c.convCastExpr(n, n.Expr, "float")
-	case *cast.Object:
+	case *ast.ExprCastObject:
 		return c.convCastExpr(n, n.Expr, "object")
-	case *cast.String:
+	case *ast.ExprCastString:
 		return c.convCastExpr(n, n.Expr, "string")
 
-	case *cast.Unset:
+	case *ast.ExprCastUnset:
 		// We dont convert (unset)$x into CastExpr deliberately.
 		if n == nil {
 			return (*ir.UnsetCastExpr)(nil)
 		}
 		out := &ir.UnsetCastExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.CastTkn = n.CastTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.Array:
+	case *ast.ExprArray:
 		if n == nil {
 			return (*ir.ArrayExpr)(nil)
 		}
 		out := &ir.ArrayExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.ArrayTkn = n.ArrayTkn
+		out.OpenBracketTkn = n.OpenBracketTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseBracketTkn = n.CloseBracketTkn
+
 		out.Position = n.Position
 		{
 			slice := make([]*ir.ArrayItemExpr, len(n.Items))
@@ -565,206 +563,266 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 			}
 			out.Items = slice
 		}
-		out.ShortSyntax = n.ShortSyntax
+		out.ShortSyntax = bytes.Contains(n.ArrayTkn.Value, []byte("..."))
 		return out
 
-	case *expr.ArrayDimFetch:
+	case *ast.ExprArrayDimFetch:
 		if n == nil {
 			return (*ir.ArrayDimFetchExpr)(nil)
 		}
 		out := &ir.ArrayDimFetchExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpenBracketTkn = n.OpenBracketTkn
+		out.CloseBracketTkn = n.CloseBracketTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		out.Dim = c.convNode(n.Dim)
 		return out
 
-	case *expr.ArrayItem:
+	case *ast.ExprArrayItem:
 		if n == nil {
 			return (*ir.ArrayItemExpr)(nil)
 		}
 		out := &ir.ArrayItemExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.EllipsisTkn = n.EllipsisTkn
+		out.DoubleArrowTkn = n.DoubleArrowTkn
+		out.AmpersandTkn = n.AmpersandTkn
 		out.Position = n.Position
 		out.Key = c.convNode(n.Key)
 		out.Val = c.convNode(n.Val)
-		out.Unpack = n.Unpack
+		out.Unpack = bytes.Contains(n.EllipsisTkn.Value, []byte("..."))
 		return out
 
-	case *expr.ArrowFunction:
+	case *ast.ExprArrowFunction:
 		if n == nil {
 			return (*ir.ArrowFunctionExpr)(nil)
 		}
 		out := &ir.ArrowFunctionExpr{}
-		out.FreeFloating = n.FreeFloating
+
+		out.StaticTkn = n.StaticTkn
+		out.FnTkn = n.FnTkn
+		out.AmpersandTkn = n.AmpersandTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+
 		out.Position = n.Position
-		out.ReturnsRef = n.ReturnsRef
-		out.Static = n.Static
-		out.PhpDocComment = n.PhpDocComment
-		out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
+
+		out.ReturnsRef = bytes.ContainsRune(n.AmpersandTkn.Value, '&')
+		out.Static = bytes.Contains(n.StaticTkn.Value, []byte("static"))
+
+		// out.PhpDocComment = n.PhpDocComment
+		// out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
+
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+
 		out.Params = c.convNodeSlice(n.Params)
 		out.ReturnType = c.convNode(n.ReturnType)
+
+		out.DoubleArrowTkn = n.DoubleArrowTkn
+
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.BitwiseNot:
+	case *ast.ExprBitwiseNot:
 		if n == nil {
 			return (*ir.BitwiseNotExpr)(nil)
 		}
 		out := &ir.BitwiseNotExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.TildaTkn = n.TildaTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.BooleanNot:
+	case *ast.ExprBooleanNot:
 		if n == nil {
 			return (*ir.BooleanNotExpr)(nil)
 		}
 		out := &ir.BooleanNotExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.ExclamationTkn = n.ExclamationTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.ClassConstFetch:
+	case *ast.ExprClassConstFetch:
 		if n == nil {
 			return (*ir.ClassConstFetchExpr)(nil)
 		}
 		out := &ir.ClassConstFetchExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.DoubleColonTkn = n.DoubleColonTkn
 		out.Position = n.Position
 		out.Class = c.convNode(n.Class)
-		out.ConstantName = c.convNode(n.ConstantName).(*ir.Identifier)
+		out.ConstantName = c.convNode(n.Const).(*ir.Identifier)
 		return out
 
-	case *expr.Clone:
+	case *ast.ExprClone:
 		if n == nil {
 			return (*ir.CloneExpr)(nil)
 		}
 		out := &ir.CloneExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.CloneTkn = n.CloneTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.Closure:
+	case *ast.ExprClosure:
 		if n == nil {
 			return (*ir.ClosureExpr)(nil)
 		}
 		out := &ir.ClosureExpr{}
-		out.FreeFloating = n.FreeFloating
+
+		out.StaticTkn = n.StaticTkn
+		out.FunctionTkn = n.FunctionTkn
+		out.AmpersandTkn = n.AmpersandTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.UseTkn = n.UseTkn
+		out.UseOpenParenthesisTkn = n.UseOpenParenthesisTkn
+
+		out.UseSeparatorTkns = n.UseSeparatorTkns
+		out.UseCloseParenthesisTkn = n.UseCloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+
 		out.Position = n.Position
-		out.ReturnsRef = n.ReturnsRef
-		out.Static = n.Static
-		out.PhpDocComment = n.PhpDocComment
-		out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
+
+		out.ReturnsRef = bytes.ContainsRune(n.AmpersandTkn.Value, '&')
+		out.Static = bytes.Contains(n.StaticTkn.Value, []byte("static"))
+
+		// out.PhpDocComment = n.PhpDocComment
+		// out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
+
 		out.Params = c.convNodeSlice(n.Params)
-		out.ClosureUse = c.convNode(n.ClosureUse).(*ir.ClosureUseExpr)
+
+		// out.ClosureUse = c.convNodeSlice(n.Uses).(*ir.ClosureUseExpr)
+		out.ClosureUse = &ir.ClosureUseExpr{
+			Token:    nil,
+			Position: nil,
+			Uses:     c.convNodeSlice(n.Uses),
+		}
+
 		out.ReturnType = c.convNode(n.ReturnType)
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *expr.ClosureUse:
-		if n == nil {
-			return (*ir.ClosureUseExpr)(nil)
-		}
-		out := &ir.ClosureUseExpr{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.Uses = c.convNodeSlice(n.Uses)
-		return out
+	// case *ast.ExprClosureUse:
+	// 	if n == nil {
+	// 		return (*ir.ClosureUseExpr)(nil)
+	// 	}
+	// 	out := &ir.ClosureUseExpr{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.Uses = c.convNodeSlice(n.Uses)
+	// 	return out
 
-	case *expr.ConstFetch:
+	case *ast.ExprConstFetch:
 		if n == nil {
 			return (*ir.ConstFetchExpr)(nil)
 		}
 		out := &ir.ConstFetchExpr{}
-		out.FreeFloating = n.FreeFloating
 		out.Position = n.Position
-		out.Constant = c.convNode(n.Constant).(*ir.Name)
+		out.Constant = c.convNode(n.Const).(*ir.Name)
 		return out
 
-	case *expr.Empty:
+	case *ast.ExprEmpty:
 		if n == nil {
 			return (*ir.EmptyExpr)(nil)
 		}
 		out := &ir.EmptyExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.ErrorSuppress:
+	case *ast.ExprErrorSuppress:
 		if n == nil {
 			return (*ir.ErrorSuppressExpr)(nil)
 		}
 		out := &ir.ErrorSuppressExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.AtTkn = n.AtTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.Eval:
+	case *ast.ExprEval:
 		if n == nil {
 			return (*ir.EvalExpr)(nil)
 		}
 		out := &ir.EvalExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.EvalTkn = n.EvalTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.Exit:
+	case *ast.ExprExit:
 		if n == nil {
 			return (*ir.ExitExpr)(nil)
 		}
 		out := &ir.ExitExpr{}
-		out.FreeFloating = n.FreeFloating
-		out.Die = n.Die
+		out.ExitTkn = n.ExitTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.Die = bytes.Contains(n.ExitTkn.Value, []byte("die"))
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.FunctionCall:
+	case *ast.ExprFunctionCall:
 		if n == nil {
 			return (*ir.FunctionCallExpr)(nil)
 		}
 		out := &ir.FunctionCallExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
 		out.Position = n.Position
 		out.Function = c.convNode(n.Function)
-		out.ArgsFreeFloating = n.ArgumentList.FreeFloating
-		out.Args = c.convNodeSlice(n.ArgumentList.Arguments)
+		out.Args = c.convNodeSlice(n.Args)
 		return out
 
-	case *expr.InstanceOf:
+	case *ast.ExprInstanceOf:
 		if n == nil {
 			return (*ir.InstanceOfExpr)(nil)
 		}
 		out := &ir.InstanceOfExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.InstanceOfTkn = n.InstanceOfTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		out.Class = c.convNode(n.Class)
 		return out
 
-	case *expr.Isset:
+	case *ast.ExprIsset:
 		if n == nil {
 			return (*ir.IssetExpr)(nil)
 		}
 		out := &ir.IssetExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.IssetTkn = n.IssetTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
 		out.Position = n.Position
-		out.Variables = c.convNodeSlice(n.Variables)
+		out.Variables = c.convNodeSlice(n.Vars)
 		return out
 
-	case *expr.List:
+	case *ast.ExprList:
 		if n == nil {
 			return (*ir.ListExpr)(nil)
 		}
 		out := &ir.ListExpr{}
-		out.FreeFloating = n.FreeFloating
+
+		out.ListTkn = n.ListTkn
+		out.OpenBracketTkn = n.OpenBracketTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseBracketTkn = n.CloseBracketTkn
+
 		out.Position = n.Position
 		{
 			slice := make([]*ir.ArrayItemExpr, len(n.Items))
@@ -773,266 +831,274 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 			}
 			out.Items = slice
 		}
-		out.ShortSyntax = n.ShortSyntax
+		out.ShortSyntax = !bytes.Contains(n.ListTkn.Value, []byte("list"))
 		return out
 
-	case *expr.MethodCall:
+	case *ast.ExprMethodCall:
 		if n == nil {
 			return (*ir.MethodCallExpr)(nil)
 		}
 		out := &ir.MethodCallExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.ObjectOperatorTkn = n.ObjectOperatorTkn
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		out.Method = c.convNode(n.Method)
-		out.ArgsFreeFloating = n.ArgumentList.FreeFloating
-		out.Args = c.convNodeSlice(n.ArgumentList.Arguments)
+		out.Args = c.convNodeSlice(n.Args)
 		return out
 
-	case *expr.New:
+	case *ast.ExprNew:
 		if n == nil {
 			return (*ir.NewExpr)(nil)
 		}
 		out := &ir.NewExpr{}
-		out.FreeFloating = n.FreeFloating
+
+		out.NewTkn = n.NewTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+
 		out.Position = n.Position
 		out.Class = c.convNode(n.Class)
-		if n.ArgumentList != nil {
-			out.ArgsFreeFloating = n.ArgumentList.FreeFloating
-			out.Args = c.convNodeSlice(n.ArgumentList.Arguments)
+
+		if n.Args != nil {
+			out.Args = c.convNodeSlice(n.Args)
 		}
 		return out
 
-	case *expr.Paren:
+	case *ast.ExprBrackets:
 		if n == nil {
 			return (*ir.ParenExpr)(nil)
 		}
 		out := &ir.ParenExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.PostDec:
+	case *ast.ExprPostDec:
 		if n == nil {
 			return (*ir.PostDecExpr)(nil)
 		}
 		out := &ir.PostDecExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		return out
 
-	case *expr.PostInc:
+	case *ast.ExprPostInc:
 		if n == nil {
 			return (*ir.PostIncExpr)(nil)
 		}
 		out := &ir.PostIncExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		return out
 
-	case *expr.PreDec:
+	case *ast.ExprPreDec:
 		if n == nil {
 			return (*ir.PreDecExpr)(nil)
 		}
 		out := &ir.PreDecExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		return out
 
-	case *expr.PreInc:
+	case *ast.ExprPreInc:
 		if n == nil {
 			return (*ir.PreIncExpr)(nil)
 		}
 		out := &ir.PreIncExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		return out
 
-	case *expr.Print:
+	case *ast.ExprPrint:
 		if n == nil {
 			return (*ir.PrintExpr)(nil)
 		}
 		out := &ir.PrintExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.PropertyFetch:
+	case *ast.ExprPropertyFetch:
 		if n == nil {
 			return (*ir.PropertyFetchExpr)(nil)
 		}
 		out := &ir.PropertyFetchExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		out.Property = c.convNode(n.Property)
 		return out
 
-	case *expr.Reference:
-		if n == nil {
-			return (*ir.ReferenceExpr)(nil)
-		}
-		out := &ir.ReferenceExpr{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable)
-		return out
+	// case *ast.ExprReference:
+	// 	if n == nil {
+	// 		return (*ir.ReferenceExpr)(nil)
+	// 	}
+	// 	out := &ir.ReferenceExpr{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.Variable = c.convNode(n.Variable)
+	// 	return out
 
-	case *expr.Require:
+	case *ast.ExprRequire:
 		return c.convImportExpr(n, n.Expr, "require")
-	case *expr.RequireOnce:
+	case *ast.ExprRequireOnce:
 		return c.convImportExpr(n, n.Expr, "require_once")
-	case *expr.Include:
+	case *ast.ExprInclude:
 		return c.convImportExpr(n, n.Expr, "include")
-	case *expr.IncludeOnce:
+	case *ast.ExprIncludeOnce:
 		return c.convImportExpr(n, n.Expr, "include_once")
 
-	case *expr.ShellExec:
+	case *ast.ExprShellExec:
 		if n == nil {
 			return (*ir.ShellExecExpr)(nil)
 		}
 		out := &ir.ShellExecExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Parts = c.convNodeSlice(n.Parts)
 		return out
 
-	case *expr.StaticCall:
+	case *ast.ExprStaticCall:
 		if n == nil {
 			return (*ir.StaticCallExpr)(nil)
 		}
 		out := &ir.StaticCallExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Class = c.convNode(n.Class)
 		out.Call = c.convNode(n.Call)
-		out.ArgsFreeFloating = n.ArgumentList.FreeFloating
+		out.ArgsToken = n.ArgumentList.Token
 		out.Args = c.convNodeSlice(n.ArgumentList.Arguments)
 		return out
 
-	case *expr.StaticPropertyFetch:
+	case *ast.ExprStaticPropertyFetch:
 		if n == nil {
 			return (*ir.StaticPropertyFetchExpr)(nil)
 		}
 		out := &ir.StaticPropertyFetchExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Class = c.convNode(n.Class)
-		out.Property = c.convNode(n.Property)
+		out.Property = c.convNode(n.Prop)
 		return out
 
-	case *expr.Ternary:
+	case *ast.ExprTernary:
 		if n == nil {
 			return (*ir.TernaryExpr)(nil)
 		}
 		out := &ir.TernaryExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Condition = c.convNode(n.Condition)
+		out.Condition = c.convNode(n.Cond)
 		out.IfTrue = c.convNode(n.IfTrue)
 		out.IfFalse = c.convNode(n.IfFalse)
 		return out
 
-	case *expr.UnaryMinus:
+	case *ast.ExprUnaryMinus:
 		if n == nil {
 			return (*ir.UnaryMinusExpr)(nil)
 		}
 		out := &ir.UnaryMinusExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.UnaryPlus:
+	case *ast.ExprUnaryPlus:
 		if n == nil {
 			return (*ir.UnaryPlusExpr)(nil)
 		}
 		out := &ir.UnaryPlusExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *expr.Yield:
+	case *ast.ExprYield:
 		if n == nil {
 			return (*ir.YieldExpr)(nil)
 		}
 		out := &ir.YieldExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Key = c.convNode(n.Key)
-		out.Value = c.convNode(n.Value)
+		out.Value = c.convNode(n.Val)
 		return out
 
-	case *expr.YieldFrom:
+	case *ast.ExprYieldFrom:
 		if n == nil {
 			return (*ir.YieldFromExpr)(nil)
 		}
 		out := &ir.YieldFromExpr{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *name.FullyQualified:
+	case *ast.NameFullyQualified:
 		return &ir.Name{
-			FreeFloating: n.FreeFloating,
-			Position:     n.Position,
-			Value:        fullyQualifiedToString(n),
+			Token:    n.Token,
+			Position: n.Position,
+			Value:    fullyQualifiedToString(n),
 		}
-	case *name.Name:
+	case *ast.Name:
 		return &ir.Name{
-			FreeFloating: n.FreeFloating,
-			Position:     n.Position,
-			Value:        namePartsToString(n.Parts),
+			Token:    n.Token,
+			Position: n.Position,
+			Value:    namePartsToString(n.Parts),
 		}
-	case *name.Relative:
+	case *ast.NameRelative:
 		return c.convRelativeName(n)
 
-	case *node.Argument:
+	case *ast.Argument:
 		if n == nil {
 			return (*ir.Argument)(nil)
 		}
 		out := &ir.Argument{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Variadic = n.Variadic
+		out.Variadic = n.VariadicTkn != nil
 		out.IsReference = n.IsReference
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *node.Identifier:
+	case *ast.Identifier:
 		if n == nil {
 			return (*ir.Identifier)(nil)
 		}
 		out := &ir.Identifier{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
-		out.Value = n.Value
+		out.Value = string(n.Value)
 		return out
 
-	case *node.Nullable:
+	case *ast.Nullable:
 		if n == nil {
 			return (*ir.Nullable)(nil)
 		}
 		out := &ir.Nullable{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *node.Parameter:
+	case *ast.Parameter:
 		if n == nil {
 			return (*ir.Parameter)(nil)
 		}
 		out := &ir.Parameter{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.ByRef = n.ByRef
 		out.Variadic = n.Variadic
@@ -1041,12 +1107,12 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 		out.DefaultValue = c.convNode(n.DefaultValue)
 		return out
 
-	case *node.Root:
+	case *ast.Root:
 		if n == nil {
 			return (*ir.Root)(nil)
 		}
 		out := &ir.Root{}
-		out.FreeFloating = n.FreeFloating
+		out.EndTkn = n.EndTkn
 		out.Position = n.Position
 		{
 			slice := make([]ir.Node, len(n.Stmts))
@@ -1057,146 +1123,162 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 		}
 		return out
 
-	case *node.SimpleVar:
+		// TODO:
+	case *ast.ExprVariable:
 		if n == nil {
 			return (*ir.SimpleVar)(nil)
 		}
 		out := &ir.SimpleVar{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Name = n.Name
 		return out
 
-	case *node.Var:
-		if n == nil {
-			return (*ir.Var)(nil)
-		}
-		out := &ir.Var{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.Expr = c.convNode(n.Expr)
-		return out
+	// case *ast.Var:
+	// 	if n == nil {
+	// 		return (*ir.Var)(nil)
+	// 	}
+	// 	out := &ir.Var{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.Expr = c.convNode(n.Expr)
+	// 	return out
 
-	case *scalar.Dnumber:
+	case *ast.ScalarDnumber:
 		if n == nil {
 			return (*ir.Dnumber)(nil)
 		}
 		out := &ir.Dnumber{}
-		out.FreeFloating = n.FreeFloating
+		out.NumberTkn = n.NumberTkn
 		out.Position = n.Position
-		out.Value = n.Value
+		out.Value = string(n.Value)
 		return out
 
-	case *scalar.Encapsed:
+	case *ast.ScalarEncapsed:
 		if n == nil {
 			return (*ir.Encapsed)(nil)
 		}
 		out := &ir.Encapsed{}
-		out.FreeFloating = n.FreeFloating
+		out.OpenQuoteTkn = n.OpenQuoteTkn
+		out.CloseQuoteTkn = n.CloseQuoteTkn
 		out.Position = n.Position
 		out.Parts = c.convNodeSlice(n.Parts)
 		return out
 
-	case *scalar.EncapsedStringPart:
+	case *ast.ScalarEncapsedStringPart:
 		if n == nil {
 			return (*ir.EncapsedStringPart)(nil)
 		}
 		out := &ir.EncapsedStringPart{}
-		out.FreeFloating = n.FreeFloating
+		out.EncapsedStrTkn = n.EncapsedStrTkn
 		out.Position = n.Position
-		out.Value = n.Value
+		out.Value = string(n.Value)
 		return out
 
-	case *scalar.Heredoc:
+	case *ast.ScalarHeredoc:
 		if n == nil {
 			return (*ir.Heredoc)(nil)
 		}
 		out := &ir.Heredoc{}
-		out.FreeFloating = n.FreeFloating
+		out.OpenHeredocTkn = n.OpenHeredocTkn
+		out.CloseHeredocTkn = n.CloseHeredocTkn
 		out.Position = n.Position
-		out.Label = n.Label
+		// out.Label = n.Label
 		out.Parts = c.convNodeSlice(n.Parts)
 		return out
 
-	case *scalar.Lnumber:
+	case *ast.ScalarLnumber:
 		if n == nil {
 			return (*ir.Lnumber)(nil)
 		}
 		out := &ir.Lnumber{}
-		out.FreeFloating = n.FreeFloating
+		out.NumberTkn = n.NumberTkn
 		out.Position = n.Position
-		out.Value = n.Value
+		out.Value = string(n.Value)
 		return out
 
-	case *scalar.MagicConstant:
+	case *ast.ScalarMagicConstant:
 		if n == nil {
 			return (*ir.MagicConstant)(nil)
 		}
 		out := &ir.MagicConstant{}
-		out.FreeFloating = n.FreeFloating
+		out.MagicConstTkn = n.MagicConstTkn
 		out.Position = n.Position
-		out.Value = n.Value
+		out.Value = string(n.Value)
 		return out
 
-	case *scalar.String:
+	case *ast.ScalarString:
 		return convString(n)
 
-	case *stmt.Break:
+	case *ast.StmtBreak:
 		if n == nil {
 			return (*ir.BreakStmt)(nil)
 		}
 		out := &ir.BreakStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.BreakTkn = n.BreakTkn
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.Case:
+	case *ast.StmtCase:
 		if n == nil {
 			return (*ir.CaseStmt)(nil)
 		}
 		out := &ir.CaseStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.CaseTkn = n.CaseTkn
+		out.CaseSeparatorTkn = n.CaseSeparatorTkn
 		out.Position = n.Position
 		out.Cond = c.convNode(n.Cond)
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.CaseList:
-		if n == nil {
-			return (*ir.CaseListStmt)(nil)
-		}
-		out := &ir.CaseListStmt{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.Cases = c.convNodeSlice(n.Cases)
-		return out
+	// case *ast.StmtCaseList:
+	// 	if n == nil {
+	// 		return (*ir.CaseListStmt)(nil)
+	// 	}
+	// 	out := &ir.CaseListStmt{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.Cases = c.convNodeSlice(n.Cases)
+	// 	return out
 
-	case *stmt.Catch:
+	case *ast.StmtCatch:
 		if n == nil {
 			return (*ir.CatchStmt)(nil)
 		}
 		out := &ir.CatchStmt{}
-		out.FreeFloating = n.FreeFloating
+
+		out.CatchTkn = n.CatchTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+
 		out.Position = n.Position
 		out.Types = c.convNodeSlice(n.Types)
-		out.Variable = c.convNode(n.Variable).(*ir.SimpleVar)
+		out.Variable = c.convNode(n.Var).(*ir.SimpleVar)
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.Class:
+	case *ast.StmtClass:
 		if n == nil {
 			return (*ir.ClassStmt)(nil)
 		}
 		return c.convClass(n)
 
-	case *stmt.ClassConstList:
+	case *ast.StmtClassConstList:
 		if n == nil {
 			return (*ir.ClassConstListStmt)(nil)
 		}
 		out := &ir.ClassConstListStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ConstTkn = n.ConstTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
+
 		{
 			slice := make([]*ir.Identifier, len(n.Modifiers))
 			for i := range n.Modifiers {
@@ -1207,37 +1289,42 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 		out.Consts = c.convNodeSlice(n.Consts)
 		return out
 
-	case *stmt.ClassExtends:
-		if n == nil {
-			return (*ir.ClassExtendsStmt)(nil)
-		}
-		out := &ir.ClassExtendsStmt{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.ClassName = c.convNode(n.ClassName).(*ir.Name)
-		return out
+	// case *ast.StmtClassExtends:
+	// 	if n == nil {
+	// 		return (*ir.ClassExtendsStmt)(nil)
+	// 	}
+	// 	out := &ir.ClassExtendsStmt{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.ClassName = c.convNode(n.ClassName).(*ir.Name)
+	// 	return out
+	//
+	// case *ast.StmtClassImplements:
+	// 	if n == nil {
+	// 		return (*ir.ClassImplementsStmt)(nil)
+	// 	}
+	// 	out := &ir.ClassImplementsStmt{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.InterfaceNames = c.convNodeSlice(n.InterfaceNames)
+	// 	return out
 
-	case *stmt.ClassImplements:
-		if n == nil {
-			return (*ir.ClassImplementsStmt)(nil)
-		}
-		out := &ir.ClassImplementsStmt{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.InterfaceNames = c.convNodeSlice(n.InterfaceNames)
-		return out
-
-	case *stmt.ClassMethod:
+	case *ast.StmtClassMethod:
 		if n == nil {
 			return (*ir.ClassMethodStmt)(nil)
 		}
 		out := &ir.ClassMethodStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.FunctionTkn = n.FunctionTkn
+		out.AmpersandTkn = n.AmpersandTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+
 		out.Position = n.Position
-		out.ReturnsRef = n.ReturnsRef
-		out.PhpDocComment = n.PhpDocComment
-		out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
-		out.MethodName = c.convNode(n.MethodName).(*ir.Identifier)
+		out.ReturnsRef = n.AmpersandTkn != nil
+		// out.PhpDocComment = n.PhpDocComment
+		// out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
+		out.MethodName = c.convNode(n.Name).(*ir.Identifier)
 		{
 			slice := make([]*ir.Identifier, len(n.Modifiers))
 			for i := range n.Modifiers {
@@ -1250,243 +1337,319 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 		out.Stmt = c.convNode(n.Stmt)
 		return out
 
-	case *stmt.ConstList:
+	case *ast.StmtConstList:
 		if n == nil {
 			return (*ir.ConstListStmt)(nil)
 		}
 		out := &ir.ConstListStmt{}
-		out.FreeFloating = n.FreeFloating
+
+		out.ConstTkn = n.ConstTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
 		out.Consts = c.convNodeSlice(n.Consts)
 		return out
 
-	case *stmt.Constant:
+	case *ast.StmtConstant:
 		if n == nil {
 			return (*ir.ConstantStmt)(nil)
 		}
 		out := &ir.ConstantStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.PhpDocComment = n.PhpDocComment
-		out.ConstantName = c.convNode(n.ConstantName).(*ir.Identifier)
+		// out.PhpDocComment = n.PhpDocComment
+		out.ConstantName = c.convNode(n.Name).(*ir.Identifier)
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.Continue:
+	case *ast.StmtContinue:
 		if n == nil {
 			return (*ir.ContinueStmt)(nil)
 		}
 		out := &ir.ContinueStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ContinueTkn = n.ContinueTkn
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.Declare:
+	case *ast.StmtDeclare:
 		if n == nil {
 			return (*ir.DeclareStmt)(nil)
 		}
 		out := &ir.DeclareStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.DeclareTkn = n.DeclareTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+		out.EndDeclareTkn = n.EndDeclareTkn
+
 		out.Position = n.Position
 		out.Consts = c.convNodeSlice(n.Consts)
 		out.Stmt = c.convNode(n.Stmt)
-		out.Alt = n.Alt
+		out.Alt = n.EndDeclareTkn != nil // TODO:
 		return out
 
-	case *stmt.Default:
+	case *ast.StmtDefault:
 		if n == nil {
 			return (*ir.DefaultStmt)(nil)
 		}
 		out := &ir.DefaultStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.DefaultTkn = n.DefaultTkn
+		out.CaseSeparatorTkn = n.CaseSeparatorTkn
 		out.Position = n.Position
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.Do:
+	case *ast.StmtDo:
 		if n == nil {
 			return (*ir.DoStmt)(nil)
 		}
 		out := &ir.DoStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.DoTkn = n.DoTkn
+		out.WhileTkn = n.WhileTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
 		out.Stmt = c.convNode(n.Stmt)
 		out.Cond = c.convNode(n.Cond)
 		return out
 
-	case *stmt.Echo:
+	case *ast.StmtEcho:
 		if n == nil {
 			return (*ir.EchoStmt)(nil)
 		}
 		out := &ir.EchoStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.EchoTkn = n.EchoTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
 		out.Exprs = c.convNodeSlice(n.Exprs)
 		return out
 
-	case *stmt.Else:
+	case *ast.StmtElse:
 		if n == nil {
 			return (*ir.ElseStmt)(nil)
 		}
 		out := &ir.ElseStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ElseTkn = n.ElseTkn
+		out.ColonTkn = n.ColonTkn
 		out.Position = n.Position
 		out.Stmt = c.convNode(n.Stmt)
-		out.AltSyntax = n.AltSyntax
+		out.AltSyntax = n.ColonTkn != nil
 		return out
 
-	case *stmt.ElseIf:
+	case *ast.StmtElseIf:
 		if n == nil {
 			return (*ir.ElseIfStmt)(nil)
 		}
 		out := &ir.ElseIfStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ElseIfTkn = n.ElseIfTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+
 		out.Position = n.Position
 		out.Cond = c.convNode(n.Cond)
 		out.Stmt = c.convNode(n.Stmt)
-		out.AltSyntax = n.AltSyntax
-		out.Merged = n.Merged
+		out.AltSyntax = bytes.ContainsRune(n.CloseParenthesisTkn.Value, ':')
+		out.Merged = bytes.Contains(n.ElseIfTkn.Value, []byte("elseif"))
 		return out
 
-	case *stmt.Expression:
+	case *ast.StmtExpression:
 		if n == nil {
 			return (*ir.ExpressionStmt)(nil)
 		}
 		out := &ir.ExpressionStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.Finally:
+	case *ast.StmtFinally:
 		if n == nil {
 			return (*ir.FinallyStmt)(nil)
 		}
 		out := &ir.FinallyStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.FinallyTkn = n.FinallyTkn
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+
 		out.Position = n.Position
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.For:
+	case *ast.StmtFor:
 		if n == nil {
 			return (*ir.ForStmt)(nil)
 		}
 		out := &ir.ForStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ForTkn = n.ForTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.InitSeparatorTkns = n.InitSeparatorTkns
+		out.InitSemiColonTkn = n.InitSemiColonTkn
+		out.CondSeparatorTkns = n.CondSeparatorTkns
+		out.CondSemiColonTkn = n.CondSemiColonTkn
+		out.LoopSeparatorTkns = n.LoopSeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+		out.EndForTkn = n.EndForTkn
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
 		out.Init = c.convNodeSlice(n.Init)
 		out.Cond = c.convNodeSlice(n.Cond)
 		out.Loop = c.convNodeSlice(n.Loop)
 		out.Stmt = c.convNode(n.Stmt)
-		out.AltSyntax = n.AltSyntax
+		out.AltSyntax = bytes.Contains(n.EndForTkn.Value, []byte("endfor"))
 		return out
 
-	case *stmt.Foreach:
+	case *ast.StmtForeach:
 		if n == nil {
 			return (*ir.ForeachStmt)(nil)
 		}
 		out := &ir.ForeachStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ForeachTkn = n.ForeachTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.AsTkn = n.AsTkn
+		out.DoubleArrowTkn = n.DoubleArrowTkn
+		out.AmpersandTkn = n.AmpersandTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+		out.EndForeachTkn = n.EndForeachTkn
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		out.Key = c.convNode(n.Key)
-		out.Variable = c.convNode(n.Variable)
+		out.Variable = c.convNode(n.Var)
 		out.Stmt = c.convNode(n.Stmt)
-		out.AltSyntax = n.AltSyntax
+		out.AltSyntax = bytes.Contains(n.EndForeachTkn.Value, []byte("endforeach"))
 		return out
 
-	case *stmt.Function:
+	case *ast.StmtFunction:
 		if n == nil {
 			return (*ir.FunctionStmt)(nil)
 		}
 		out := &ir.FunctionStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.FunctionTkn = n.FunctionTkn
+		out.AmpersandTkn = n.AmpersandTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+
 		out.Position = n.Position
-		out.ReturnsRef = n.ReturnsRef
-		out.PhpDocComment = n.PhpDocComment
-		out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
-		out.FunctionName = c.convNode(n.FunctionName).(*ir.Identifier)
+		out.ReturnsRef = n.AmpersandTkn != nil
+		// out.PhpDocComment = n.PhpDocComment
+		// out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
+
+		out.FunctionName = c.convNode(n.Name).(*ir.Identifier)
 		out.Params = c.convNodeSlice(n.Params)
 		out.ReturnType = c.convNode(n.ReturnType)
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.Global:
+	case *ast.StmtGlobal:
 		if n == nil {
 			return (*ir.GlobalStmt)(nil)
 		}
 		out := &ir.GlobalStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.GlobalTkn = n.GlobalTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		out.Vars = c.convNodeSlice(n.Vars)
 		return out
 
-	case *stmt.Goto:
+	case *ast.StmtGoto:
 		if n == nil {
 			return (*ir.GotoStmt)(nil)
 		}
 		out := &ir.GotoStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.GotoTkn = n.GotoTkn
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		out.Label = c.convNode(n.Label).(*ir.Identifier)
 		return out
 
-	case *stmt.GroupUse:
+	case *ast.StmtGroupUseList:
 		if n == nil {
 			return (*ir.GroupUseStmt)(nil)
 		}
 		out := &ir.GroupUseStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.UseTkn = n.UseTkn
+		out.LeadingNsSeparatorTkn = n.LeadingNsSeparatorTkn
+		out.NsSeparatorTkn = n.NsSeparatorTkn
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.SeparatorTkns = n.SeparatorTkns
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
-		useType := c.convNode(n.UseType)
+		useType := c.convNode(n.Type)
 		if useType != nil {
 			out.UseType = useType.(*ir.Identifier)
 		}
 		out.Prefix = c.convNode(n.Prefix).(*ir.Name)
-		out.UseList = c.convNodeSlice(n.UseList)
+		out.UseList = c.convNodeSlice(n.Uses)
 		return out
 
-	case *stmt.HaltCompiler:
+	case *ast.StmtHaltCompiler:
 		if n == nil {
 			return (*ir.HaltCompilerStmt)(nil)
 		}
 		out := &ir.HaltCompilerStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.HaltCompilerTkn = n.HaltCompilerTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		return out
 
-	case *stmt.If:
+	case *ast.StmtIf:
 		if n == nil {
 			return (*ir.IfStmt)(nil)
 		}
 		out := &ir.IfStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.IfTkn = n.IfTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+		out.EndIfTkn = n.EndIfTkn
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
 		out.Cond = c.convNode(n.Cond)
 		out.Stmt = c.convNode(n.Stmt)
 		out.ElseIf = c.convNodeSlice(n.ElseIf)
 		out.Else = c.convNode(n.Else)
-		out.AltSyntax = n.AltSyntax
+		out.AltSyntax = n.ColonTkn != nil
 		return out
 
-	case *stmt.InlineHtml:
+	case *ast.StmtInlineHtml:
 		if n == nil {
-			return (*ir.InlineHTMLStmt)(nil)
+			return (*ir.InlineHtmlStmt)(nil)
 		}
-		out := &ir.InlineHTMLStmt{}
-		out.FreeFloating = n.FreeFloating
+		out := &ir.InlineHtmlStmt{}
+		out.InlineHtmlTkn = n.InlineHtmlTkn
 		out.Position = n.Position
-		out.Value = n.Value
+		out.Value = string(n.Value)
 		return out
 
-	case *stmt.Interface:
+	case *ast.StmtInterface:
 		if n == nil {
 			return (*ir.InterfaceStmt)(nil)
 		}
 		out := &ir.InterfaceStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.PhpDocComment = n.PhpDocComment
 		out.InterfaceName = c.convNode(n.InterfaceName).(*ir.Identifier)
@@ -1494,32 +1657,32 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.InterfaceExtends:
-		if n == nil {
-			return (*ir.InterfaceExtendsStmt)(nil)
-		}
-		out := &ir.InterfaceExtendsStmt{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.InterfaceNames = c.convNodeSlice(n.InterfaceNames)
-		return out
+	// case *ast.StmtInterfaceExtends:
+	// 	if n == nil {
+	// 		return (*ir.InterfaceExtendsStmt)(nil)
+	// 	}
+	// 	out := &ir.InterfaceExtendsStmt{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.InterfaceNames = c.convNodeSlice(n.InterfaceNames)
+	// 	return out
 
-	case *stmt.Label:
+	case *ast.StmtLabel:
 		if n == nil {
 			return (*ir.LabelStmt)(nil)
 		}
 		out := &ir.LabelStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ColonTkn = n.ColonTkn
 		out.Position = n.Position
-		out.LabelName = c.convNode(n.LabelName).(*ir.Identifier)
+		out.LabelName = c.convNode(n.Name).(*ir.Identifier)
 		return out
 
-	case *stmt.Namespace:
+	case *ast.StmtNamespace:
 		if n == nil {
 			return (*ir.NamespaceStmt)(nil)
 		}
 		out := &ir.NamespaceStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		if n.NamespaceName != nil {
 			out.NamespaceName = c.convNode(n.NamespaceName).(*ir.Name)
@@ -1528,34 +1691,37 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.Nop:
+	case *ast.StmtNop:
 		if n == nil {
 			return (*ir.NopStmt)(nil)
 		}
 		out := &ir.NopStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		return out
 
-	case *stmt.Property:
+	case *ast.StmtProperty:
 		if n == nil {
 			return (*ir.PropertyStmt)(nil)
 		}
 		out := &ir.PropertyStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.PhpDocComment = n.PhpDocComment
-		out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
-		out.Variable = c.convNode(n.Variable).(*ir.SimpleVar)
+
+		// out.PhpDocComment = n.PhpDocComment
+		// out.PhpDoc = c.parsePHPDoc(n.PhpDocComment)
+
+		out.Variable = c.convNode(n.Var).(*ir.SimpleVar)
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.PropertyList:
+	case *ast.StmtPropertyList:
 		if n == nil {
 			return (*ir.PropertyListStmt)(nil)
 		}
 		out := &ir.PropertyListStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.SeparatorTkns = n.SeparatorTkns
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		{
 			slice := make([]*ir.Identifier, len(n.Modifiers))
@@ -1565,179 +1731,195 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 			out.Modifiers = slice
 		}
 		out.Type = c.convNode(n.Type)
-		out.Properties = c.convNodeSlice(n.Properties)
+		out.Properties = c.convNodeSlice(n.Props)
 		return out
 
-	case *stmt.Return:
+	case *ast.StmtReturn:
 		if n == nil {
 			return (*ir.ReturnStmt)(nil)
 		}
 		out := &ir.ReturnStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ReturnTkn = n.ReturnTkn
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.Static:
+	case *ast.StmtStatic:
 		if n == nil {
 			return (*ir.StaticStmt)(nil)
 		}
 		out := &ir.StaticStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.StaticTkn = n.StaticTkn
+		out.SeparatorTkns = n.SeparatorTkns
 		out.Position = n.Position
 		out.Vars = c.convNodeSlice(n.Vars)
 		return out
 
-	case *stmt.StaticVar:
+	case *ast.StmtStaticVar:
 		if n == nil {
 			return (*ir.StaticVarStmt)(nil)
 		}
 		out := &ir.StaticVarStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.EqualTkn = n.EqualTkn
 		out.Position = n.Position
-		out.Variable = c.convNode(n.Variable).(*ir.SimpleVar)
+		out.Variable = c.convNode(n.Var).(*ir.SimpleVar)
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.StmtList:
+	case *ast.StmtStmtList:
 		if n == nil {
 			return (*ir.StmtList)(nil)
 		}
 		out := &ir.StmtList{}
-		out.FreeFloating = n.FreeFloating
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
 		out.Position = n.Position
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.Switch:
+	case *ast.StmtSwitch:
 		if n == nil {
 			return (*ir.SwitchStmt)(nil)
 		}
 		out := &ir.SwitchStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.SwitchTkn = n.SwitchTkn
+		out.OpenParenthesisTkn = n.OpenParenthesisTkn
+		out.CloseParenthesisTkn = n.CloseParenthesisTkn
+		out.ColonTkn = n.ColonTkn
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.CaseSeparatorTkn = n.CaseSeparatorTkn
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+		out.EndSwitchTkn = n.EndSwitchTkn
+		out.SemiColonTkn = n.SemiColonTkn
+
 		out.Position = n.Position
 		out.Cond = c.convNode(n.Cond)
-		out.CaseList = c.convNode(n.CaseList).(*ir.CaseListStmt)
-		out.AltSyntax = n.AltSyntax
+		out.CaseList = c.convNodeSlice(n.Cases) // .(*ir.CaseListStmt)
+		out.AltSyntax = n.ColonTkn != nil
 		return out
 
-	case *stmt.Throw:
+	case *ast.StmtThrow:
 		if n == nil {
 			return (*ir.ThrowStmt)(nil)
 		}
 		out := &ir.ThrowStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.ThrowTkn = n.ThrowTkn
+		out.SemiColonTkn = n.SemiColonTkn
 		out.Position = n.Position
 		out.Expr = c.convNode(n.Expr)
 		return out
 
-	case *stmt.Trait:
+	case *ast.StmtTrait:
 		if n == nil {
 			return (*ir.TraitStmt)(nil)
 		}
 		out := &ir.TraitStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.TraitTkn = n.TraitTkn
+		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
+		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
+
 		out.Position = n.Position
-		out.PhpDocComment = n.PhpDocComment
-		out.TraitName = c.convNode(n.TraitName).(*ir.Identifier)
+		// out.PhpDocComment = n.PhpDocComment
+		out.TraitName = c.convNode(n.Name).(*ir.Identifier)
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
-	case *stmt.TraitAdaptationList:
-		if n == nil {
-			return (*ir.TraitAdaptationListStmt)(nil)
-		}
-		out := &ir.TraitAdaptationListStmt{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.Adaptations = c.convNodeSlice(n.Adaptations)
-		return out
+	// case *ast.StmtTraitAdaptationList:
+	// 	if n == nil {
+	// 		return (*ir.TraitAdaptationListStmt)(nil)
+	// 	}
+	// 	out := &ir.TraitAdaptationListStmt{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.Adaptations = c.convNodeSlice(n.Adaptations)
+	// 	return out
+	//
+	// case *ast.StmtTraitMethodRef:
+	// 	if n == nil {
+	// 		return (*ir.TraitMethodRefStmt)(nil)
+	// 	}
+	// 	out := &ir.TraitMethodRefStmt{}
+	// 	out.Token = n.Token
+	// 	out.Position = n.Position
+	// 	out.Trait = c.convNode(n.Trait)
+	// 	out.Method = c.convNode(n.Method).(*ir.Identifier)
+	// 	return out
 
-	case *stmt.TraitMethodRef:
-		if n == nil {
-			return (*ir.TraitMethodRefStmt)(nil)
-		}
-		out := &ir.TraitMethodRefStmt{}
-		out.FreeFloating = n.FreeFloating
-		out.Position = n.Position
-		out.Trait = c.convNode(n.Trait)
-		out.Method = c.convNode(n.Method).(*ir.Identifier)
-		return out
-
-	case *stmt.TraitUse:
+	case *ast.StmtTraitUse:
 		if n == nil {
 			return (*ir.TraitUseStmt)(nil)
 		}
 		out := &ir.TraitUseStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Traits = c.convNodeSlice(n.Traits)
 		out.TraitAdaptationList = c.convNode(n.TraitAdaptationList)
 		return out
 
-	case *stmt.TraitUseAlias:
+	case *ast.StmtTraitUseAlias:
 		if n == nil {
 			return (*ir.TraitUseAliasStmt)(nil)
 		}
 		out := &ir.TraitUseAliasStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Ref = c.convNode(n.Ref)
 		out.Modifier = c.convNode(n.Modifier)
 		out.Alias = c.convNode(n.Alias).(*ir.Identifier)
 		return out
 
-	case *stmt.TraitUsePrecedence:
+	case *ast.StmtTraitUsePrecedence:
 		if n == nil {
 			return (*ir.TraitUsePrecedenceStmt)(nil)
 		}
 		out := &ir.TraitUsePrecedenceStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Ref = c.convNode(n.Ref)
 		out.Insteadof = c.convNodeSlice(n.Insteadof)
 		return out
 
-	case *stmt.Try:
+	case *ast.StmtTry:
 		if n == nil {
 			return (*ir.TryStmt)(nil)
 		}
 		out := &ir.TryStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		out.Catches = c.convNodeSlice(n.Catches)
 		out.Finally = c.convNode(n.Finally)
 		return out
 
-	case *stmt.Unset:
+	case *ast.StmtUnset:
 		if n == nil {
 			return (*ir.UnsetStmt)(nil)
 		}
 		out := &ir.UnsetStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Vars = c.convNodeSlice(n.Vars)
 		return out
 
-	case *stmt.Use:
+	case *ast.StmtUse:
 		if n == nil {
 			return (*ir.UseStmt)(nil)
 		}
 		out := &ir.UseStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.UseType = c.convNode(n.UseType).(*ir.Identifier)
 		out.Use = c.convNode(n.Use).(*ir.Name)
 		out.Alias = c.convNode(n.Alias).(*ir.Identifier)
 		return out
 
-	case *stmt.UseList:
+	case *ast.StmtUseList:
 		if n == nil {
 			return (*ir.UseListStmt)(nil)
 		}
 		out := &ir.UseListStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		useType := c.convNode(n.UseType)
 		if useType != nil {
@@ -1746,12 +1928,12 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 		out.Uses = c.convNodeSlice(n.Uses)
 		return out
 
-	case *stmt.While:
+	case *ast.StmtWhile:
 		if n == nil {
 			return (*ir.WhileStmt)(nil)
 		}
 		out := &ir.WhileStmt{}
-		out.FreeFloating = n.FreeFloating
+		out.Token = n.Token
 		out.Position = n.Position
 		out.Cond = c.convNode(n.Cond)
 		out.Stmt = c.convNode(n.Stmt)
@@ -1762,37 +1944,37 @@ func (c *Converter) convNode(n node.Node) ir.Node {
 	panic(fmt.Sprintf("unhandled type %T", n))
 }
 
-func (c *Converter) convRelativeName(n *name.Relative) *ir.Name {
+func (c *Converter) convRelativeName(n *ast.NameRelative) *ir.Name {
 	value := namePartsToString(n.Parts)
 	if c.namespace != "" {
 		value = `\` + c.namespace + `\` + value
 	}
 	return &ir.Name{
-		FreeFloating: n.FreeFloating,
-		Position:     n.Position,
-		Value:        value,
+		Token:    n.Token,
+		Position: n.Position,
+		Value:    value,
 	}
 }
 
-func (c *Converter) convImportExpr(n, e node.Node, fn string) *ir.ImportExpr {
+func (c *Converter) convImportExpr(n, e ast.Vertex, fn string) *ir.ImportExpr {
 	return &ir.ImportExpr{
-		FreeFloating: *n.GetFreeFloating(),
-		Position:     n.GetPosition(),
-		Func:         fn,
-		Expr:         c.convNode(e),
+		Token:    *n.GetToken(),
+		Position: n.GetPosition(),
+		Func:     fn,
+		Expr:     c.convNode(e),
 	}
 }
 
-func (c *Converter) convCastExpr(n, e node.Node, typ string) *ir.TypeCastExpr {
+func (c *Converter) convCastExpr(n, e ast.Vertex, typ string) *ir.TypeCastExpr {
 	return &ir.TypeCastExpr{
-		FreeFloating: *n.GetFreeFloating(),
-		Position:     n.GetPosition(),
-		Type:         typ,
-		Expr:         c.convNode(e),
+		Token:    *n.GetToken(),
+		Position: n.GetPosition(),
+		Type:     typ,
+		Expr:     c.convNode(e),
 	}
 }
 
-func (c *Converter) convClass(n *stmt.Class) ir.Node {
+func (c *Converter) convClass(n *ast.StmtClass) ir.Node {
 	class := ir.Class{
 		PhpDocComment: n.PhpDocComment,
 		PhpDoc:        c.parsePHPDoc(n.PhpDocComment),
@@ -1804,22 +1986,22 @@ func (c *Converter) convClass(n *stmt.Class) ir.Node {
 	if n.ClassName == nil {
 		// Anonymous class expression.
 		out := &ir.AnonClassExpr{
-			FreeFloating: n.FreeFloating,
-			Position:     n.Position,
-			Class:        class,
+			Token:    n.Token,
+			Position: n.Position,
+			Class:    class,
 		}
 		if n.ArgumentList != nil {
-			out.ArgsFreeFloating = n.ArgumentList.FreeFloating
+			out.ArgsToken = n.ArgumentList.Token
 			out.Args = c.convNodeSlice(n.ArgumentList.Arguments)
 		}
 		return out
 	}
 
 	out := &ir.ClassStmt{
-		FreeFloating: n.FreeFloating,
-		Position:     n.Position,
-		Class:        class,
-		ClassName:    c.convNode(n.ClassName).(*ir.Identifier),
+		Token:     n.Token,
+		Position:  n.Position,
+		Class:     class,
+		ClassName: c.convNode(n.ClassName).(*ir.Identifier),
 	}
 	if n.Modifiers != nil {
 		slice := make([]*ir.Identifier, len(n.Modifiers))
@@ -1838,10 +2020,10 @@ func (c *Converter) parsePHPDoc(doc string) []phpdoc.CommentPart {
 	return nil
 }
 
-func convString(n *scalar.String) ir.Node {
+func convString(n *ast.ScalarString) ir.Node {
 	out := &ir.String{
-		FreeFloating: n.FreeFloating,
-		Position:     n.Position,
+		Token:    n.Token,
+		Position: n.Position,
 	}
 
 	// We can't use n.Value[0] as quote char directly as when
@@ -1859,7 +2041,7 @@ func convString(n *scalar.String) ir.Node {
 	s, err := interpretString(unquoted, quote)
 	if err != nil {
 		return &ir.BadString{
-			FreeFloating: n.FreeFloating,
+			Token:        n.Token,
 			Position:     n.Position,
 			Value:        unquoted,
 			Error:        err.Error(),

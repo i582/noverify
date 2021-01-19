@@ -165,7 +165,7 @@ func (n *IfStmt) GetFreeFloating() *freefloating.Collection { return &n.FreeFloa
 
 func (n *ImportExpr) GetFreeFloating() *freefloating.Collection { return &n.FreeFloating }
 
-func (n *InlineHTMLStmt) GetFreeFloating() *freefloating.Collection { return &n.FreeFloating }
+func (n *InlineHtmlStmt) GetFreeFloating() *freefloating.Collection { return &n.FreeFloating }
 
 func (n *InstanceOfExpr) GetFreeFloating() *freefloating.Collection { return &n.FreeFloating }
 
