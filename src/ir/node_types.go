@@ -438,6 +438,7 @@ type ArrayExpr struct {
 }
 
 // ArrayDimFetchExpr is a `$Variable[$Dim]` expression.
+// If $CurlyBrace is true, it's `$Variable{$Dim}`
 type ArrayDimFetchExpr struct {
 	FreeFloating    freefloating.Collection
 	Position        *position.Position
@@ -445,6 +446,7 @@ type ArrayDimFetchExpr struct {
 	OpenBracketTkn  *token.Token
 	Dim             Node
 	CloseBracketTkn *token.Token
+	CurlyBrace      bool
 }
 
 // ArrayItemExpr is a `$Key => $Val` expression.
@@ -536,7 +538,7 @@ type ClosureExpr struct {
 	CloseParenthesisTkn    *token.Token
 	UseTkn                 *token.Token
 	UseOpenParenthesisTkn  *token.Token
-	ClosureUse             []Node
+	ClosureUse             *ClosureUseExpr
 	UseSeparatorTkns       []*token.Token
 	UseCloseParenthesisTkn *token.Token
 	ColonTkn               *token.Token
@@ -550,12 +552,12 @@ type ClosureExpr struct {
 	PhpDoc                 []phpdoc.CommentPart
 }
 
-// ClosureUseExpr is a $Uses single part in `use ($Uses...)` expression.
+// ClosureUseExpr is a `use ($Uses...)` expression.
+// TODO: it's not a expression really.
 type ClosureUseExpr struct {
 	FreeFloating freefloating.Collection
 	Position     *position.Position
-	AmpersandTkn *token.Token
-	Var          Node
+	Uses         []Node
 }
 
 // ConstFetchExpr is a `$Constant` expression.
@@ -1448,6 +1450,8 @@ type PropertyStmt struct {
 	Variable     *SimpleVar
 	EqualTkn     *token.Token
 	Expr         Node
+
+	Doc
 }
 
 // PropertyListStmt is a `$Modifiers $Type $Properties` statement.

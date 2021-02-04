@@ -704,20 +704,39 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.Static = hasValue(n.StaticTkn)
 
 		out.Params = c.convNodeSlice(n.Params)
-		out.ClosureUse = c.convNodeSlice(n.Uses)
+		out.ClosureUse = &ir.ClosureUseExpr{
+			FreeFloating: nil,
+			Position:     nil,
+			Uses:         c.convNodeSlice(n.Uses),
+		}
 		out.ReturnType = c.convNode(n.ReturnType)
 		out.Stmts = c.convNodeSlice(n.Stmts)
 		return out
 
 	case *ast.ExprClosureUse:
 		if n == nil {
-			return (*ir.ClosureUseExpr)(nil)
+			return (*ir.SimpleVar)(nil)
 		}
-		out := &ir.ClosureUseExpr{}
-		out.AmpersandTkn = n.AmpersandTkn
-		out.Position = n.Position
-		out.Var = c.convNode(n.Var)
-		return out
+
+		varNode := c.convNode(n.Var)
+
+		if hasValue(n.AmpersandTkn) {
+			varNode = &ir.ReferenceExpr{
+				FreeFloating: nil,
+				AmpersandTkn: n.AmpersandTkn,
+				Position:     n.Position,
+				Variable:     varNode,
+			}
+		}
+
+		switch varNode := varNode.(type) {
+		case *ir.SimpleVar:
+			varNode.Position = n.Position
+		case *ir.Var:
+			varNode.Position = n.Position
+		}
+
+		return varNode
 
 	case *ast.ExprConstFetch:
 		if n == nil {
@@ -1141,7 +1160,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out := &ir.SimpleVar{}
 		out.Position = n.Position
 		out.DollarTkn = n.DollarTkn
-		out.NameNode = c.convNode(nameNode).(*ir.Identifier)
+		out.Name = c.convNode(nameNode).(*ir.Identifier).Value
 		out.Name = string(bytes.TrimPrefix(nameNode.Value, []byte("$")))
 
 		if out.Name == "foo" {
@@ -1193,9 +1212,12 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 			}
 		}
 
+		nameNode := c.ConvertNode(n.Name).(*ir.Identifier)
+
 		return &ir.SimpleVar{
 			Position: n.Position,
-			Name:     c.ConvertNode(n.Name).(*ir.Identifier).Value,
+			NameNode: nameNode,
+			Name:     nameNode.Value,
 		}
 
 	case *ast.ScalarEncapsedStringPart:
