@@ -885,7 +885,9 @@ func (p *PrettyPrinter) printExprClone(n *ir.CloneExpr) {
 }
 
 func (p *PrettyPrinter) printExprClosureUse(n *ir.ClosureUseExpr) {
-	p.Print(n.Var)
+	writeString(p.w, "use (")
+	p.joinPrint(", ", n.Uses)
+	writeString(p.w, ")")
 }
 
 func (p *PrettyPrinter) printExprClosure(n *ir.ClosureExpr) {
@@ -905,10 +907,7 @@ func (p *PrettyPrinter) printExprClosure(n *ir.ClosureExpr) {
 
 	if n.ClosureUse != nil {
 		writeString(p.w, " ")
-
-		writeString(p.w, "use (")
-		p.joinPrint(", ", n.ClosureUse)
-		writeString(p.w, ")")
+		p.Print(n.ClosureUse)
 	}
 
 	if n.ReturnType != nil {

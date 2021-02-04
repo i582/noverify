@@ -132,7 +132,7 @@ func (d *rootWalker) handleToken(t *token.Token) {
 			}
 			if d.linterDisabled {
 				needleLine := ln.Line() + t.Position.StartLine - 1
-				d.ReportByLine(needleLine, LevelInformation, "linterError", "Linter is already disabled for this file")
+				d.ReportByLine(needleLine, LevelWarning, "linterError", "Linter is already disabled for this file")
 				continue
 			}
 			canDisable := false
@@ -142,7 +142,7 @@ func (d *rootWalker) handleToken(t *token.Token) {
 			d.linterDisabled = canDisable
 			if !canDisable {
 				needleLine := ln.Line() + t.Position.StartLine - 1
-				d.ReportByLine(needleLine, LevelInformation, "linterError", "You are not allowed to disable linter")
+				d.ReportByLine(needleLine, LevelWarning, "linterError", "You are not allowed to disable linter")
 			}
 		}
 	}
@@ -613,11 +613,9 @@ func (d *rootWalker) handleFuncStmts(params []meta.FuncParam, uses, stmts []ir.N
 	}
 
 	for _, useExpr := range uses {
-		useExpr := useExpr.(*ir.ClosureUseExpr)
-
 		var byRef bool
 		var v *ir.SimpleVar
-		switch u := useExpr.Var.(type) {
+		switch u := useExpr.(type) {
 		case *ir.ReferenceExpr:
 			v = u.Variable.(*ir.SimpleVar)
 			byRef = true
