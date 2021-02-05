@@ -3,6 +3,7 @@ package irutil
 
 import (
 	"fmt"
+
 	"github.com/VKCOM/noverify/src/ir"
 )
 
@@ -540,7 +541,7 @@ func NodeEqual(x, y ir.Node) bool {
 		if !NodeSliceEqual(x.Params, y.Params) {
 			return false
 		}
-		if !NodeSliceEqual(x.ClosureUse, y.ClosureUse) {
+		if !NodeEqual(x.ClosureUse, y.ClosureUse) {
 			return false
 		}
 		if !NodeEqual(x.ReturnType, y.ReturnType) {
@@ -564,7 +565,7 @@ func NodeEqual(x, y ir.Node) bool {
 		if !ok || x == nil || y == nil {
 			return x == y
 		}
-		if !NodeEqual(x.Var, y.Var) {
+		if !NodeSliceEqual(x.Uses, y.Uses) {
 			return false
 		}
 		return true

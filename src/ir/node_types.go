@@ -848,6 +848,7 @@ type YieldFromExpr struct {
 type Name struct {
 	FreeFloating freefloating.Collection
 	Position     *position.Position
+	NameTkn      *token.Token
 	Value        string
 }
 

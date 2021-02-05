@@ -353,17 +353,14 @@ func NodeClone(x ir.Node) ir.Node {
 	case *ir.ClosureExpr:
 		clone := *x
 		clone.Params = NodeSliceClone(x.Params)
-		clone.ClosureUse = NodeSliceClone(x.ClosureUse)
-		if x.ReturnType != nil {
-			clone.ReturnType = NodeClone(x.ReturnType)
+		if x.ClosureUse != nil {
+			clone.ClosureUse = NodeClone(x.ClosureUse).(*ir.ClosureUseExpr)
 		}
 		clone.Stmts = NodeSliceClone(x.Stmts)
 		return &clone
 	case *ir.ClosureUseExpr:
 		clone := *x
-		if x.Var != nil {
-			clone.Var = NodeClone(x.Var)
-		}
+		clone.Uses = NodeSliceClone(x.Uses)
 		return &clone
 	case *ir.CoalesceExpr:
 		clone := *x

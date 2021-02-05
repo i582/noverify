@@ -1459,6 +1459,11 @@ func (n *MulExpr) IterateTokens(cb func(*token.Token) bool) {
 }
 
 func (n *Name) IterateTokens(cb func(*token.Token) bool) {
+	if n.NameTkn != nil {
+		if !cb(n.NameTkn) {
+			return
+		}
+	}
 }
 
 func (n *NamespaceStmt) IterateTokens(cb func(*token.Token) bool) {

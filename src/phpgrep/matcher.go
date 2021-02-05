@@ -751,10 +751,10 @@ func (m *matcher) eqClosure(state *matcherState, x *ir.ClosureExpr, y ir.Node) b
 	if y, ok := y.(*ir.ClosureExpr); ok {
 		var xUses, yUses []ir.Node
 		if x.ClosureUse != nil {
-			xUses = x.ClosureUse
+			xUses = x.ClosureUse.Uses
 		}
 		if y.ClosureUse != nil {
-			yUses = y.ClosureUse
+			yUses = y.ClosureUse.Uses
 		}
 		return ok && x.ReturnsRef == y.ReturnsRef &&
 			x.Static == y.Static &&

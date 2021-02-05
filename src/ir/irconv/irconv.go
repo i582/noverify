@@ -577,6 +577,9 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.CloseBracketTkn = n.CloseBracketTkn
 		out.Variable = c.convNode(n.Var)
 		out.Dim = c.convNode(n.Dim)
+
+		out.CurlyBrace = hasValue(out.OpenBracketTkn) && out.OpenBracketTkn.Value[0] == '{'
+
 		return out
 
 	case *ast.ExprArrayItem:
@@ -1070,6 +1073,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 	case *ast.Name:
 		return &ir.Name{
 			Position: n.Position,
+			NameTkn:  namePartsToToken(n.Parts),
 			Value:    namePartsToString(n.Parts),
 		}
 	case *ast.NameRelative:
@@ -1157,15 +1161,13 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 			}
 		}
 
+		nameNodeIr := c.convNode(nameNode).(*ir.Identifier)
+
 		out := &ir.SimpleVar{}
 		out.Position = n.Position
 		out.DollarTkn = n.DollarTkn
-		out.Name = c.convNode(nameNode).(*ir.Identifier).Value
 		out.Name = string(bytes.TrimPrefix(nameNode.Value, []byte("$")))
-
-		if out.Name == "foo" {
-			fmt.Print()
-		}
+		out.NameNode = nameNodeIr
 
 		return out
 
