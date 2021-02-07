@@ -864,7 +864,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 			}
 			out.Items = slice
 		}
-		out.ShortSyntax = false
+		out.ShortSyntax = !hasValue(n.ListTkn)
 		return out
 
 	case *ast.ExprMethodCall:
@@ -1256,7 +1256,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.Position = n.Position
 		out.OpenHeredocTkn = n.OpenHeredocTkn
 		out.CloseHeredocTkn = n.CloseHeredocTkn
-		out.Label = namePartsToString(n.Parts)
+		out.Label = string(n.OpenHeredocTkn.Value)
 		out.Parts = c.convNodeSlice(n.Parts)
 		return out
 

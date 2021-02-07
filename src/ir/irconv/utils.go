@@ -31,8 +31,6 @@ func namePartsToString(parts []ast.Vertex) string {
 		switch v := v.(type) {
 		case *ast.NamePart:
 			value = string(v.Value)
-		case *ast.ScalarEncapsedStringPart:
-			value = string(v.Value)
 		}
 
 		s = append(s, value)
