@@ -591,9 +591,21 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.EllipsisTkn = n.EllipsisTkn
 		out.DoubleArrowTkn = n.DoubleArrowTkn
 		out.AmpersandTkn = n.AmpersandTkn
+
 		out.Key = c.convNode(n.Key)
-		out.Val = c.convNode(n.Val)
-		out.Unpack = n.EllipsisTkn != nil
+
+		if hasValue(n.AmpersandTkn) {
+			out.Val = &ir.ReferenceExpr{
+				FreeFloating: nil,
+				AmpersandTkn: n.AmpersandTkn,
+				Position:     n.Position,
+				Variable:     c.convNode(n.Val),
+			}
+		} else {
+			out.Val = c.convNode(n.Val)
+		}
+
+		out.Unpack = hasValue(n.EllipsisTkn)
 		return out
 
 	case *ast.ExprArrowFunction:
@@ -793,7 +805,8 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.OpenParenthesisTkn = n.OpenParenthesisTkn
 		out.CloseParenthesisTkn = n.CloseParenthesisTkn
 		out.Expr = c.convNode(n.Expr)
-		out.Die = hasValue(n.ExitTkn)
+
+		out.Die = hasValue(n.ExitTkn) && bytes.Equal(n.ExitTkn.Value, []byte("die"))
 		return out
 
 	case *ast.ExprFunctionCall:
@@ -851,7 +864,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 			}
 			out.Items = slice
 		}
-		out.ShortSyntax = hasValue(n.OpenBracketTkn)
+		out.ShortSyntax = false
 		return out
 
 	case *ast.ExprMethodCall:
@@ -884,7 +897,10 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 
 		if n.Args != nil {
 			out.Args = c.convNodeSlice(n.Args)
+		} else if hasValue(n.OpenParenthesisTkn) {
+			out.Args = []ir.Node{}
 		}
+
 		return out
 
 	case *ast.ExprBrackets:
@@ -1557,6 +1573,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.AsTkn = n.AsTkn
 		out.DoubleArrowTkn = n.DoubleArrowTkn
 		out.AmpersandTkn = n.AmpersandTkn
+
 		out.CloseParenthesisTkn = n.CloseParenthesisTkn
 		out.ColonTkn = n.ColonTkn
 		out.EndForeachTkn = n.EndForeachTkn
@@ -1564,7 +1581,18 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 
 		out.Expr = c.convNode(n.Expr)
 		out.Key = c.convNode(n.Key)
-		out.Variable = c.convNode(n.Var)
+
+		if hasValue(n.AmpersandTkn) {
+			out.Variable = &ir.ReferenceExpr{
+				FreeFloating: nil,
+				AmpersandTkn: n.AmpersandTkn,
+				Position:     n.Position,
+				Variable:     c.convNode(n.Var),
+			}
+		} else {
+			out.Variable = c.convNode(n.Var)
+		}
+
 		out.Stmt = c.convNode(n.Stmt)
 
 		out.AltSyntax = hasValue(n.EndForeachTkn)
@@ -2084,12 +2112,17 @@ func (c *Converter) convClass(n *ast.StmtClass) ir.Node {
 		}
 	}
 
+	implements := c.convNodeSlice(n.Implements)
+
 	class := ir.Class{
 		Extends: extends,
-		Implements: &ir.ClassImplementsStmt{
-			InterfaceNames: c.convNodeSlice(n.Implements),
-		},
-		Stmts: c.convNodeSlice(n.Stmts),
+		Stmts:   c.convNodeSlice(n.Stmts),
+	}
+
+	if len(implements) != 0 {
+		class.Implements = &ir.ClassImplementsStmt{
+			InterfaceNames: implements,
+		}
 	}
 
 	class.PhpDocComment, class.PhpDoc = c.getPhpDocWithParse(n.ClassTkn)
