@@ -108,10 +108,6 @@ func (d *rootWalker) File() *workspace.File {
 }
 
 func (d *rootWalker) handleToken(t *token.Token) {
-	if t == nil {
-		return
-	}
-
 	if t.ID != token.T_DOC_COMMENT {
 		return
 	}
@@ -149,19 +145,8 @@ func (d *rootWalker) handleToken(t *token.Token) {
 }
 
 func (d *rootWalker) handleComments(n ir.Node) {
-	if n == nil {
-		return
-	}
-
 	n.IterateTokens(func(t *token.Token) bool {
-		if t == nil {
-			return true
-		}
-
 		d.handleToken(t)
-		for _, ff := range t.FreeFloating {
-			d.handleToken(ff)
-		}
 		return true
 	})
 }

@@ -168,7 +168,7 @@ func (b *blockWalker) reportDeadCode(n ir.Node) {
 }
 
 func (b *blockWalker) handleComments(n ir.Node) {
-	irutil.DeepIterateTokens(n, func(t *token.Token) bool {
+	n.IterateTokens(func(t *token.Token) bool {
 		b.handleToken(n, t)
 		return true
 	})

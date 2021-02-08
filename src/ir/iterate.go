@@ -5,1913 +5,779 @@ import (
 	"github.com/z7zmey/php-parser/pkg/token"
 )
 
+func handleToken(t *token.Token, cb func(*token.Token) bool) bool {
+	if t == nil {
+		return true
+	}
+
+	if !cb(t) {
+		return false
+	}
+
+	needReturn := true
+	for _, ff := range t.FreeFloating {
+		needReturn = needReturn && handleToken(ff, cb)
+	}
+
+	return needReturn
+}
+
 func (n *AnonClassExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ClassTkn != nil {
-		if !cb(n.ClassTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.ClassTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *Argument) IterateTokens(cb func(*token.Token) bool) {
-	if n.VariadicTkn != nil {
-		if !cb(n.VariadicTkn) {
-			return
-		}
-	}
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
+	handleToken(n.VariadicTkn, cb)
+	handleToken(n.AmpersandTkn, cb)
 }
 
 func (n *ArrayDimFetchExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpenBracketTkn != nil {
-		if !cb(n.OpenBracketTkn) {
-			return
-		}
-	}
-	if n.CloseBracketTkn != nil {
-		if !cb(n.CloseBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenBracketTkn, cb)
+	handleToken(n.CloseBracketTkn, cb)
 }
 
 func (n *ArrayExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ArrayTkn != nil {
-		if !cb(n.ArrayTkn) {
-			return
-		}
-	}
-	if n.OpenBracketTkn != nil {
-		if !cb(n.OpenBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.ArrayTkn, cb)
+	handleToken(n.OpenBracketTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseBracketTkn != nil {
-		if !cb(n.CloseBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseBracketTkn, cb)
 }
 
 func (n *ArrayItemExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.EllipsisTkn != nil {
-		if !cb(n.EllipsisTkn) {
-			return
-		}
-	}
-	if n.DoubleArrowTkn != nil {
-		if !cb(n.DoubleArrowTkn) {
-			return
-		}
-	}
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
+	handleToken(n.EllipsisTkn, cb)
+	handleToken(n.DoubleArrowTkn, cb)
+	handleToken(n.AmpersandTkn, cb)
 }
 
 func (n *ArrowFunctionExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.StaticTkn != nil {
-		if !cb(n.StaticTkn) {
-			return
-		}
-	}
-	if n.FnTkn != nil {
-		if !cb(n.FnTkn) {
-			return
-		}
-	}
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.StaticTkn, cb)
+	handleToken(n.FnTkn, cb)
+	handleToken(n.AmpersandTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.DoubleArrowTkn != nil {
-		if !cb(n.DoubleArrowTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.DoubleArrowTkn, cb)
 }
 
 func (n *Assign) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignBitwiseAnd) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignBitwiseOr) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignBitwiseXor) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignCoalesce) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignConcat) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignDiv) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignMinus) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignMod) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignMul) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignPlus) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignPow) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignReference) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignShiftLeft) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *AssignShiftRight) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *BadString) IterateTokens(cb func(*token.Token) bool) {
-	if n.MinusTkn != nil {
-		if !cb(n.MinusTkn) {
-			return
-		}
-	}
-	if n.StringTkn != nil {
-		if !cb(n.StringTkn) {
-			return
-		}
-	}
+	handleToken(n.MinusTkn, cb)
+	handleToken(n.StringTkn, cb)
 }
 
 func (n *BitwiseAndExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *BitwiseNotExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.TildaTkn != nil {
-		if !cb(n.TildaTkn) {
-			return
-		}
-	}
+	handleToken(n.TildaTkn, cb)
 }
 
 func (n *BitwiseOrExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *BitwiseXorExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *BooleanAndExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *BooleanNotExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ExclamationTkn != nil {
-		if !cb(n.ExclamationTkn) {
-			return
-		}
-	}
+	handleToken(n.ExclamationTkn, cb)
 }
 
 func (n *BooleanOrExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *BreakStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.BreakTkn != nil {
-		if !cb(n.BreakTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.BreakTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *CaseStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.CaseTkn != nil {
-		if !cb(n.CaseTkn) {
-			return
-		}
-	}
-	if n.CaseSeparatorTkn != nil {
-		if !cb(n.CaseSeparatorTkn) {
-			return
-		}
-	}
+	handleToken(n.CaseTkn, cb)
+	handleToken(n.CaseSeparatorTkn, cb)
 }
 
 func (n *CatchStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.CatchTkn != nil {
-		if !cb(n.CatchTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.CatchTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *ClassConstFetchExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.DoubleColonTkn != nil {
-		if !cb(n.DoubleColonTkn) {
-			return
-		}
-	}
+	handleToken(n.DoubleColonTkn, cb)
 }
 
 func (n *ClassConstListStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ConstTkn != nil {
-		if !cb(n.ConstTkn) {
-			return
-		}
-	}
+	handleToken(n.ConstTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *ClassExtendsStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ExtendsTkn != nil {
-		if !cb(n.ExtendsTkn) {
-			return
-		}
-	}
+	handleToken(n.ExtendsTkn, cb)
 }
 
 func (n *ClassImplementsStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ImplementsTkn != nil {
-		if !cb(n.ImplementsTkn) {
-			return
-		}
-	}
+	handleToken(n.ImplementsTkn, cb)
 	for _, tk := range n.ImplementsSeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
 }
 
 func (n *ClassMethodStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.FunctionTkn != nil {
-		if !cb(n.FunctionTkn) {
-			return
-		}
-	}
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.FunctionTkn, cb)
+	handleToken(n.AmpersandTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
 }
 
 func (n *ClassStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ClassTkn != nil {
-		if !cb(n.ClassTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.ClassTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *CloneExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.CloneTkn != nil {
-		if !cb(n.CloneTkn) {
-			return
-		}
-	}
+	handleToken(n.CloneTkn, cb)
 }
 
 func (n *ClosureExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.StaticTkn != nil {
-		if !cb(n.StaticTkn) {
-			return
-		}
-	}
-	if n.FunctionTkn != nil {
-		if !cb(n.FunctionTkn) {
-			return
-		}
-	}
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.StaticTkn, cb)
+	handleToken(n.FunctionTkn, cb)
+	handleToken(n.AmpersandTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.UseTkn != nil {
-		if !cb(n.UseTkn) {
-			return
-		}
-	}
-	if n.UseOpenParenthesisTkn != nil {
-		if !cb(n.UseOpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.UseTkn, cb)
+	handleToken(n.UseOpenParenthesisTkn, cb)
 	for _, tk := range n.UseSeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.UseCloseParenthesisTkn != nil {
-		if !cb(n.UseCloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.UseCloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *ClosureUseExpr) IterateTokens(cb func(*token.Token) bool) {
 }
 
 func (n *CoalesceExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *ConcatExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *ConstFetchExpr) IterateTokens(cb func(*token.Token) bool) {
 }
 
 func (n *ConstListStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ConstTkn != nil {
-		if !cb(n.ConstTkn) {
-			return
-		}
-	}
+	handleToken(n.ConstTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *ConstantStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *ContinueStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ContinueTkn != nil {
-		if !cb(n.ContinueTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.ContinueTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *DeclareStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.DeclareTkn != nil {
-		if !cb(n.DeclareTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.DeclareTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.EndDeclareTkn != nil {
-		if !cb(n.EndDeclareTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.EndDeclareTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *DefaultStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.DefaultTkn != nil {
-		if !cb(n.DefaultTkn) {
-			return
-		}
-	}
-	if n.CaseSeparatorTkn != nil {
-		if !cb(n.CaseSeparatorTkn) {
-			return
-		}
-	}
+	handleToken(n.DefaultTkn, cb)
+	handleToken(n.CaseSeparatorTkn, cb)
 }
 
 func (n *DivExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *Dnumber) IterateTokens(cb func(*token.Token) bool) {
-	if n.NumberTkn != nil {
-		if !cb(n.NumberTkn) {
-			return
-		}
-	}
+	handleToken(n.NumberTkn, cb)
 }
 
 func (n *DoStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.DoTkn != nil {
-		if !cb(n.DoTkn) {
-			return
-		}
-	}
-	if n.WhileTkn != nil {
-		if !cb(n.WhileTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.DoTkn, cb)
+	handleToken(n.WhileTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *EchoStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.EchoTkn != nil {
-		if !cb(n.EchoTkn) {
-			return
-		}
-	}
+	handleToken(n.EchoTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *ElseIfStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ElseIfTkn != nil {
-		if !cb(n.ElseIfTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
+	handleToken(n.ElseIfTkn, cb)
+	handleToken(n.ElseTkn, cb)
+	handleToken(n.IfTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
 }
 
 func (n *ElseStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ElseTkn != nil {
-		if !cb(n.ElseTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
+	handleToken(n.ElseTkn, cb)
+	handleToken(n.ColonTkn, cb)
 }
 
 func (n *EmptyExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.EmptyTkn != nil {
-		if !cb(n.EmptyTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.EmptyTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *Encapsed) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpenQuoteTkn != nil {
-		if !cb(n.OpenQuoteTkn) {
-			return
-		}
-	}
-	if n.CloseQuoteTkn != nil {
-		if !cb(n.CloseQuoteTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenQuoteTkn, cb)
+	handleToken(n.CloseQuoteTkn, cb)
 }
 
 func (n *EncapsedStringPart) IterateTokens(cb func(*token.Token) bool) {
-	if n.EncapsedStrTkn != nil {
-		if !cb(n.EncapsedStrTkn) {
-			return
-		}
-	}
+	handleToken(n.EncapsedStrTkn, cb)
 }
 
 func (n *EqualExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *ErrorSuppressExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.AtTkn != nil {
-		if !cb(n.AtTkn) {
-			return
-		}
-	}
+	handleToken(n.AtTkn, cb)
 }
 
 func (n *EvalExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.EvalTkn != nil {
-		if !cb(n.EvalTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.EvalTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *ExitExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ExitTkn != nil {
-		if !cb(n.ExitTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.ExitTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *ExpressionStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *FinallyStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.FinallyTkn != nil {
-		if !cb(n.FinallyTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.FinallyTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *ForStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ForTkn != nil {
-		if !cb(n.ForTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.ForTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.InitSeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.InitSemiColonTkn != nil {
-		if !cb(n.InitSemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.InitSemiColonTkn, cb)
 	for _, tk := range n.CondSeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CondSemiColonTkn != nil {
-		if !cb(n.CondSemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.CondSemiColonTkn, cb)
 	for _, tk := range n.LoopSeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.EndForTkn != nil {
-		if !cb(n.EndForTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.EndForTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *ForeachStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ForeachTkn != nil {
-		if !cb(n.ForeachTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.AsTkn != nil {
-		if !cb(n.AsTkn) {
-			return
-		}
-	}
-	if n.DoubleArrowTkn != nil {
-		if !cb(n.DoubleArrowTkn) {
-			return
-		}
-	}
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.EndForeachTkn != nil {
-		if !cb(n.EndForeachTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.ForeachTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.AsTkn, cb)
+	handleToken(n.DoubleArrowTkn, cb)
+	handleToken(n.AmpersandTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.EndForeachTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *FunctionCallExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *FunctionStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.FunctionTkn != nil {
-		if !cb(n.FunctionTkn) {
-			return
-		}
-	}
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.FunctionTkn, cb)
+	handleToken(n.AmpersandTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *GlobalStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.GlobalTkn != nil {
-		if !cb(n.GlobalTkn) {
-			return
-		}
-	}
+	handleToken(n.GlobalTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *GotoStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.GotoTkn != nil {
-		if !cb(n.GotoTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.GotoTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *GreaterExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *GreaterOrEqualExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *GroupUseStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.UseTkn != nil {
-		if !cb(n.UseTkn) {
-			return
-		}
-	}
-	if n.LeadingNsSeparatorTkn != nil {
-		if !cb(n.LeadingNsSeparatorTkn) {
-			return
-		}
-	}
-	if n.NsSeparatorTkn != nil {
-		if !cb(n.NsSeparatorTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.UseTkn, cb)
+	handleToken(n.LeadingNsSeparatorTkn, cb)
+	handleToken(n.NsSeparatorTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseCurlyBracketTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *HaltCompilerStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.HaltCompilerTkn != nil {
-		if !cb(n.HaltCompilerTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.HaltCompilerTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *Heredoc) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpenHeredocTkn != nil {
-		if !cb(n.OpenHeredocTkn) {
-			return
-		}
-	}
-	if n.CloseHeredocTkn != nil {
-		if !cb(n.CloseHeredocTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenHeredocTkn, cb)
+	handleToken(n.CloseHeredocTkn, cb)
 }
 
 func (n *IdenticalExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *Identifier) IterateTokens(cb func(*token.Token) bool) {
-	if n.IdentifierTkn != nil {
-		if !cb(n.IdentifierTkn) {
-			return
-		}
-	}
+	handleToken(n.IdentifierTkn, cb)
 }
 
 func (n *IfStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.IfTkn != nil {
-		if !cb(n.IfTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.EndIfTkn != nil {
-		if !cb(n.EndIfTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.IfTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.EndIfTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
+	handleToken(n.ElseTkn, cb)
 }
 
 func (n *ImportExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ImportTkn != nil {
-		if !cb(n.ImportTkn) {
-			return
-		}
-	}
+	handleToken(n.ImportTkn, cb)
 }
 
 func (n *InlineHTMLStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.InlineHTMLTkn != nil {
-		if !cb(n.InlineHTMLTkn) {
-			return
-		}
-	}
+	handleToken(n.InlineHTMLTkn, cb)
 }
 
 func (n *InstanceOfExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.InstanceOfTkn != nil {
-		if !cb(n.InstanceOfTkn) {
-			return
-		}
-	}
+	handleToken(n.InstanceOfTkn, cb)
 }
 
 func (n *InterfaceExtendsStmt) IterateTokens(cb func(*token.Token) bool) {
 }
 
 func (n *InterfaceStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.InterfaceTkn != nil {
-		if !cb(n.InterfaceTkn) {
-			return
-		}
-	}
-	if n.ExtendsTkn != nil {
-		if !cb(n.ExtendsTkn) {
-			return
-		}
-	}
+	handleToken(n.InterfaceTkn, cb)
+	handleToken(n.ExtendsTkn, cb)
 	for _, tk := range n.ExtendsSeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *IssetExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.IssetTkn != nil {
-		if !cb(n.IssetTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.IssetTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *LabelStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
+	handleToken(n.ColonTkn, cb)
 }
 
 func (n *ListExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ListTkn != nil {
-		if !cb(n.ListTkn) {
-			return
-		}
-	}
-	if n.OpenBracketTkn != nil {
-		if !cb(n.OpenBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.ListTkn, cb)
+	handleToken(n.OpenBracketTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseBracketTkn != nil {
-		if !cb(n.CloseBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseBracketTkn, cb)
 }
 
 func (n *Lnumber) IterateTokens(cb func(*token.Token) bool) {
-	if n.NumberTkn != nil {
-		if !cb(n.NumberTkn) {
-			return
-		}
-	}
+	handleToken(n.NumberTkn, cb)
 }
 
 func (n *LogicalAndExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *LogicalOrExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *LogicalXorExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *MagicConstant) IterateTokens(cb func(*token.Token) bool) {
-	if n.MagicConstTkn != nil {
-		if !cb(n.MagicConstTkn) {
-			return
-		}
-	}
+	handleToken(n.MagicConstTkn, cb)
 }
 
 func (n *MethodCallExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ObjectOperatorTkn != nil {
-		if !cb(n.ObjectOperatorTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.ObjectOperatorTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *MinusExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *ModExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *MulExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *Name) IterateTokens(cb func(*token.Token) bool) {
-	if n.NameTkn != nil {
-		if !cb(n.NameTkn) {
-			return
-		}
-	}
+	handleToken(n.NameTkn, cb)
 }
 
 func (n *NamespaceStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.NsTkn != nil {
-		if !cb(n.NsTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.NsTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *NewExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.NewTkn != nil {
-		if !cb(n.NewTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.NewTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *NopStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *NotEqualExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *NotIdenticalExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *Nullable) IterateTokens(cb func(*token.Token) bool) {
-	if n.QuestionTkn != nil {
-		if !cb(n.QuestionTkn) {
-			return
-		}
-	}
+	handleToken(n.QuestionTkn, cb)
 }
 
 func (n *Parameter) IterateTokens(cb func(*token.Token) bool) {
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
-	if n.VariadicTkn != nil {
-		if !cb(n.VariadicTkn) {
-			return
-		}
-	}
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.AmpersandTkn, cb)
+	handleToken(n.VariadicTkn, cb)
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *ParenExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *PlusExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *PostDecExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.DecTkn != nil {
-		if !cb(n.DecTkn) {
-			return
-		}
-	}
+	handleToken(n.DecTkn, cb)
 }
 
 func (n *PostIncExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.IncTkn != nil {
-		if !cb(n.IncTkn) {
-			return
-		}
-	}
+	handleToken(n.IncTkn, cb)
 }
 
 func (n *PowExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *PreDecExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.DecTkn != nil {
-		if !cb(n.DecTkn) {
-			return
-		}
-	}
+	handleToken(n.DecTkn, cb)
 }
 
 func (n *PreIncExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.IncTkn != nil {
-		if !cb(n.IncTkn) {
-			return
-		}
-	}
+	handleToken(n.IncTkn, cb)
 }
 
 func (n *PrintExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.PrintTkn != nil {
-		if !cb(n.PrintTkn) {
-			return
-		}
-	}
+	handleToken(n.PrintTkn, cb)
 }
 
 func (n *PropertyFetchExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.ObjectOperatorTkn != nil {
-		if !cb(n.ObjectOperatorTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.ObjectOperatorTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *PropertyListStmt) IterateTokens(cb func(*token.Token) bool) {
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *PropertyStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *ReferenceExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.AmpersandTkn != nil {
-		if !cb(n.AmpersandTkn) {
-			return
-		}
-	}
+	handleToken(n.AmpersandTkn, cb)
 }
 
 func (n *ReturnStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ReturnTkn != nil {
-		if !cb(n.ReturnTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.ReturnTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *Root) IterateTokens(cb func(*token.Token) bool) {
-	if n.EndTkn != nil {
-		if !cb(n.EndTkn) {
-			return
-		}
-	}
+	handleToken(n.EndTkn, cb)
 }
 
 func (n *ShellExecExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpenBacktickTkn != nil {
-		if !cb(n.OpenBacktickTkn) {
-			return
-		}
-	}
-	if n.CloseBacktickTkn != nil {
-		if !cb(n.CloseBacktickTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenBacktickTkn, cb)
+	handleToken(n.CloseBacktickTkn, cb)
 }
 
 func (n *ShiftLeftExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *ShiftRightExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *SimpleVar) IterateTokens(cb func(*token.Token) bool) {
-	if n.DollarTkn != nil {
-		if !cb(n.DollarTkn) {
-			return
-		}
-	}
-	if n.IdentifierTkn != nil {
-		if !cb(n.IdentifierTkn) {
-			return
-		}
-	}
+	handleToken(n.DollarTkn, cb)
+	handleToken(n.IdentifierTkn, cb)
 }
 
 func (n *SmallerExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *SmallerOrEqualExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *SpaceshipExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpTkn != nil {
-		if !cb(n.OpTkn) {
-			return
-		}
-	}
+	handleToken(n.OpTkn, cb)
 }
 
 func (n *StaticCallExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.DoubleColonTkn != nil {
-		if !cb(n.DoubleColonTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.DoubleColonTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
 }
 
 func (n *StaticPropertyFetchExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.DoubleColonTkn != nil {
-		if !cb(n.DoubleColonTkn) {
-			return
-		}
-	}
+	handleToken(n.DoubleColonTkn, cb)
 }
 
 func (n *StaticStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.StaticTkn != nil {
-		if !cb(n.StaticTkn) {
-			return
-		}
-	}
+	handleToken(n.StaticTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *StaticVarStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.EqualTkn != nil {
-		if !cb(n.EqualTkn) {
-			return
-		}
-	}
+	handleToken(n.EqualTkn, cb)
 }
 
 func (n *StmtList) IterateTokens(cb func(*token.Token) bool) {
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *String) IterateTokens(cb func(*token.Token) bool) {
-	if n.MinusTkn != nil {
-		if !cb(n.MinusTkn) {
-			return
-		}
-	}
-	if n.StringTkn != nil {
-		if !cb(n.StringTkn) {
-			return
-		}
-	}
+	handleToken(n.MinusTkn, cb)
+	handleToken(n.StringTkn, cb)
 }
 
 func (n *SwitchStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.SwitchTkn != nil {
-		if !cb(n.SwitchTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CaseSeparatorTkn != nil {
-		if !cb(n.CaseSeparatorTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.EndSwitchTkn != nil {
-		if !cb(n.EndSwitchTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SwitchTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CaseSeparatorTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
+	handleToken(n.EndSwitchTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *TernaryExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.QuestionTkn != nil {
-		if !cb(n.QuestionTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
+	handleToken(n.QuestionTkn, cb)
+	handleToken(n.ColonTkn, cb)
 }
 
 func (n *ThrowStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.ThrowTkn != nil {
-		if !cb(n.ThrowTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.ThrowTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *TraitAdaptationListStmt) IterateTokens(cb func(*token.Token) bool) {
@@ -1921,269 +787,101 @@ func (n *TraitMethodRefStmt) IterateTokens(cb func(*token.Token) bool) {
 }
 
 func (n *TraitStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.TraitTkn != nil {
-		if !cb(n.TraitTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.TraitTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *TraitUseAliasStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.DoubleColonTkn != nil {
-		if !cb(n.DoubleColonTkn) {
-			return
-		}
-	}
-	if n.AsTkn != nil {
-		if !cb(n.AsTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.DoubleColonTkn, cb)
+	handleToken(n.AsTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *TraitUsePrecedenceStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.DoubleColonTkn != nil {
-		if !cb(n.DoubleColonTkn) {
-			return
-		}
-	}
-	if n.InsteadofTkn != nil {
-		if !cb(n.InsteadofTkn) {
-			return
-		}
-	}
+	handleToken(n.DoubleColonTkn, cb)
+	handleToken(n.InsteadofTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *TraitUseStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.UseTkn != nil {
-		if !cb(n.UseTkn) {
-			return
-		}
-	}
+	handleToken(n.UseTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *TryStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.TryTkn != nil {
-		if !cb(n.TryTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.TryTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *TypeCastExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.CastTkn != nil {
-		if !cb(n.CastTkn) {
-			return
-		}
-	}
+	handleToken(n.CastTkn, cb)
 }
 
 func (n *UnaryMinusExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.MinusTkn != nil {
-		if !cb(n.MinusTkn) {
-			return
-		}
-	}
+	handleToken(n.MinusTkn, cb)
 }
 
 func (n *UnaryPlusExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.PlusTkn != nil {
-		if !cb(n.PlusTkn) {
-			return
-		}
-	}
+	handleToken(n.PlusTkn, cb)
 }
 
 func (n *UnsetCastExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.CastTkn != nil {
-		if !cb(n.CastTkn) {
-			return
-		}
-	}
+	handleToken(n.CastTkn, cb)
 }
 
 func (n *UnsetStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.UnsetTkn != nil {
-		if !cb(n.UnsetTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
+	handleToken(n.UnsetTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *UseListStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.UseTkn != nil {
-		if !cb(n.UseTkn) {
-			return
-		}
-	}
+	handleToken(n.UseTkn, cb)
 	for _, tk := range n.SeparatorTkns {
-		if !cb(tk) {
-			return
-		}
+		handleToken(tk, cb)
 	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *UseStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.NsSeparatorTkn != nil {
-		if !cb(n.NsSeparatorTkn) {
-			return
-		}
-	}
-	if n.AsTkn != nil {
-		if !cb(n.AsTkn) {
-			return
-		}
-	}
+	handleToken(n.NsSeparatorTkn, cb)
+	handleToken(n.AsTkn, cb)
 }
 
 func (n *Var) IterateTokens(cb func(*token.Token) bool) {
-	if n.DollarTkn != nil {
-		if !cb(n.DollarTkn) {
-			return
-		}
-	}
-	if n.OpenCurlyBracketTkn != nil {
-		if !cb(n.OpenCurlyBracketTkn) {
-			return
-		}
-	}
-	if n.CloseCurlyBracketTkn != nil {
-		if !cb(n.CloseCurlyBracketTkn) {
-			return
-		}
-	}
+	handleToken(n.DollarTkn, cb)
+	handleToken(n.OpenCurlyBracketTkn, cb)
+	handleToken(n.CloseCurlyBracketTkn, cb)
 }
 
 func (n *WhileStmt) IterateTokens(cb func(*token.Token) bool) {
-	if n.WhileTkn != nil {
-		if !cb(n.WhileTkn) {
-			return
-		}
-	}
-	if n.OpenParenthesisTkn != nil {
-		if !cb(n.OpenParenthesisTkn) {
-			return
-		}
-	}
-	if n.CloseParenthesisTkn != nil {
-		if !cb(n.CloseParenthesisTkn) {
-			return
-		}
-	}
-	if n.ColonTkn != nil {
-		if !cb(n.ColonTkn) {
-			return
-		}
-	}
-	if n.EndWhileTkn != nil {
-		if !cb(n.EndWhileTkn) {
-			return
-		}
-	}
-	if n.SemiColonTkn != nil {
-		if !cb(n.SemiColonTkn) {
-			return
-		}
-	}
+	handleToken(n.WhileTkn, cb)
+	handleToken(n.OpenParenthesisTkn, cb)
+	handleToken(n.CloseParenthesisTkn, cb)
+	handleToken(n.ColonTkn, cb)
+	handleToken(n.EndWhileTkn, cb)
+	handleToken(n.SemiColonTkn, cb)
 }
 
 func (n *YieldExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.YieldTkn != nil {
-		if !cb(n.YieldTkn) {
-			return
-		}
-	}
-	if n.DoubleArrowTkn != nil {
-		if !cb(n.DoubleArrowTkn) {
-			return
-		}
-	}
+	handleToken(n.YieldTkn, cb)
+	handleToken(n.DoubleArrowTkn, cb)
 }
 
 func (n *YieldFromExpr) IterateTokens(cb func(*token.Token) bool) {
-	if n.YieldFromTkn != nil {
-		if !cb(n.YieldFromTkn) {
-			return
-		}
-	}
+	handleToken(n.YieldFromTkn, cb)
 }
