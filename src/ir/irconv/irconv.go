@@ -1198,7 +1198,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.Position = n.Position
 		out.DollarTkn = n.DollarTkn
 		out.Name = string(bytes.TrimPrefix(nameNode.Value, []byte("$")))
-		out.NameNode = nameNodeIr
+		out.IdentifierTkn = nameNodeIr.IdentifierTkn
 
 		return out
 
@@ -1248,9 +1248,9 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		nameNode := c.ConvertNode(n.Name).(*ir.Identifier)
 
 		return &ir.SimpleVar{
-			Position: n.Position,
-			NameNode: nameNode,
-			Name:     nameNode.Value,
+			Position:      n.Position,
+			IdentifierTkn: nameNode.IdentifierTkn,
+			Name:          nameNode.Value,
 		}
 
 	case *ast.ScalarEncapsedStringPart:

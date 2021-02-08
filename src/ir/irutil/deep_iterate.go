@@ -20,7 +20,15 @@ func handleToken(t *token.Token, cb func(*token.Token) bool) bool {
 }
 
 func DeepIterateTokens(n ir.Node, cb func(*token.Token) bool) {
+	if n == nil {
+		return
+	}
+
 	n.IterateTokens(func(t *token.Token) bool {
+		if t == nil {
+			return true
+		}
+
 		return handleToken(t, cb)
 	})
 }

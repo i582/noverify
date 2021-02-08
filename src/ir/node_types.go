@@ -909,11 +909,11 @@ type Root struct {
 
 // SimpleVar is a normal PHP variable like `$foo` or `$bar`.
 type SimpleVar struct {
-	FreeFloating freefloating.Collection
-	Position     *position.Position
-	DollarTkn    *token.Token
-	NameNode     *Identifier
-	Name         string
+	FreeFloating  freefloating.Collection
+	Position      *position.Position
+	DollarTkn     *token.Token
+	IdentifierTkn *token.Token
+	Name          string
 }
 
 // Var is variable variable expression like `$$foo` or `${"foo"}`.

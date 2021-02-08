@@ -1492,9 +1492,6 @@ func NodeEqual(x, y ir.Node) bool {
 		if !ok || x == nil || y == nil {
 			return x == y
 		}
-		if !NodeEqual(x.NameNode, y.NameNode) {
-			return false
-		}
 		if x.Name != y.Name {
 			return false
 		}

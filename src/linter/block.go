@@ -9,7 +9,6 @@ import (
 	"github.com/VKCOM/noverify/src/ir"
 	"github.com/VKCOM/noverify/src/ir/irutil"
 	"github.com/VKCOM/noverify/src/meta"
-	"github.com/VKCOM/noverify/src/php/parser/freefloating"
 	"github.com/VKCOM/noverify/src/phpdoc"
 	"github.com/VKCOM/noverify/src/solver"
 )
@@ -169,19 +168,8 @@ func (b *blockWalker) reportDeadCode(n ir.Node) {
 }
 
 func (b *blockWalker) handleComments(n ir.Node) {
-	if n == nil {
-		return
-	}
-
-	n.IterateTokens(func(t *token.Token) bool {
-		if t == nil {
-			return true
-		}
-
+	irutil.DeepIterateTokens(n, func(t *token.Token) bool {
 		b.handleToken(n, t)
-		for _, ff := range t.FreeFloating {
-			b.handleToken(n, ff)
-		}
 		return true
 	})
 }
@@ -230,14 +218,6 @@ func (b *blockWalker) EnterNode(n ir.Node) (res bool) {
 	}
 
 	b.handleComments(n)
-
-	if ffs := n.GetFreeFloating(); ffs != nil {
-		for _, cs := range *ffs {
-			for _, c := range cs {
-				b.walkComments(n, c)
-			}
-		}
-	}
 
 	switch s := n.(type) {
 	case *ir.LogicalOrExpr:
@@ -532,31 +512,6 @@ func (b *blockWalker) addVar(v ir.Node, typ meta.TypesMap, reason string, flags 
 		return
 	}
 	b.trackVarName(v, sv.Name)
-}
-
-func (b *blockWalker) walkComments(n ir.Node, c freefloating.String) {
-	if c.StringType != freefloating.CommentType {
-		return
-	}
-	str := c.Value
-
-	if !phpdoc.IsPHPDoc(str) {
-		return
-	}
-
-	for _, p := range phpdoc.Parse(b.r.ctx.phpdocTypeParser, str) {
-		p, ok := p.(*phpdoc.TypeVarCommentPart)
-		if !ok || p.Name() != "var" {
-			continue
-		}
-
-		types, warning := typesFromPHPDoc(&b.r.ctx, p.Type)
-		if warning != "" {
-			b.r.Report(n, LevelNotice, "phpdocType", "%s on line %d", warning, p.Line())
-		}
-		m := newTypesMap(&b.r.ctx, types)
-		b.ctx.sc.AddVarFromPHPDoc(strings.TrimPrefix(p.Var, "$"), m, "@var")
-	}
 }
 
 func (b *blockWalker) handleUnset(s *ir.UnsetStmt) bool {
@@ -1684,7 +1639,7 @@ func (b *blockWalker) handleAssign(a *ir.Assign) bool {
 		b.handleAndCheckDimFetchLValue(v, "assign_array", typ)
 		return false
 	case *ir.SimpleVar:
-		b.handleComments(v.NameNode)
+		b.handleComments(v)
 		b.paramClobberCheck(v)
 		b.replaceVar(v, solver.ExprTypeLocal(b.ctx.sc, b.r.ctx.st, a.Expression), "assign", meta.VarAlwaysDefined)
 	case *ir.Var:

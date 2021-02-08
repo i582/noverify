@@ -1716,6 +1716,11 @@ func (n *SimpleVar) IterateTokens(cb func(*token.Token) bool) {
 			return
 		}
 	}
+	if n.IdentifierTkn != nil {
+		if !cb(n.IdentifierTkn) {
+			return
+		}
+	}
 }
 
 func (n *SmallerExpr) IterateTokens(cb func(*token.Token) bool) {
