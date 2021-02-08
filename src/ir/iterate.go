@@ -26,21 +26,6 @@ func (n *AnonClassExpr) IterateTokens(cb func(*token.Token) bool) {
 			return
 		}
 	}
-	if n.ExtendsTkn != nil {
-		if !cb(n.ExtendsTkn) {
-			return
-		}
-	}
-	if n.ImplementsTkn != nil {
-		if !cb(n.ImplementsTkn) {
-			return
-		}
-	}
-	for _, tk := range n.ImplementsSeparatorTkns {
-		if !cb(tk) {
-			return
-		}
-	}
 	if n.OpenCurlyBracketTkn != nil {
 		if !cb(n.OpenCurlyBracketTkn) {
 			return
@@ -365,9 +350,6 @@ func (n *BreakStmt) IterateTokens(cb func(*token.Token) bool) {
 	}
 }
 
-func (n *CaseListStmt) IterateTokens(cb func(*token.Token) bool) {
-}
-
 func (n *CaseStmt) IterateTokens(cb func(*token.Token) bool) {
 	if n.CaseTkn != nil {
 		if !cb(n.CaseTkn) {
@@ -441,9 +423,24 @@ func (n *ClassConstListStmt) IterateTokens(cb func(*token.Token) bool) {
 }
 
 func (n *ClassExtendsStmt) IterateTokens(cb func(*token.Token) bool) {
+	if n.ExtendsTkn != nil {
+		if !cb(n.ExtendsTkn) {
+			return
+		}
+	}
 }
 
 func (n *ClassImplementsStmt) IterateTokens(cb func(*token.Token) bool) {
+	if n.ImplementsTkn != nil {
+		if !cb(n.ImplementsTkn) {
+			return
+		}
+	}
+	for _, tk := range n.ImplementsSeparatorTkns {
+		if !cb(tk) {
+			return
+		}
+	}
 }
 
 func (n *ClassMethodStmt) IterateTokens(cb func(*token.Token) bool) {
@@ -482,21 +479,6 @@ func (n *ClassMethodStmt) IterateTokens(cb func(*token.Token) bool) {
 func (n *ClassStmt) IterateTokens(cb func(*token.Token) bool) {
 	if n.ClassTkn != nil {
 		if !cb(n.ClassTkn) {
-			return
-		}
-	}
-	if n.ExtendsTkn != nil {
-		if !cb(n.ExtendsTkn) {
-			return
-		}
-	}
-	if n.ImplementsTkn != nil {
-		if !cb(n.ImplementsTkn) {
-			return
-		}
-	}
-	for _, tk := range n.ImplementsSeparatorTkns {
-		if !cb(tk) {
 			return
 		}
 	}

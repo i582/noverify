@@ -70,6 +70,21 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.EqualTkn = n.EqualTkn
 		out.Variable = c.convNode(n.Var)
 		out.Expression = c.convNode(n.Expr)
+
+		// hack for expressions like:
+		// /**
+		//  * @param Boo $x
+		// */
+		// $_ = fn($x) => $x->b();
+		if arrowFn, ok := out.Expression.(*ir.ArrowFunctionExpr); ok {
+			doc, found := irutil.FindPhpDoc(out.Variable)
+
+			if found {
+				arrowFn.PhpDocComment = doc
+				arrowFn.PhpDoc = c.parsePHPDoc(doc)
+			}
+		}
+
 		return out
 
 	case *ast.ExprAssignBitwiseAnd:
@@ -1347,6 +1362,9 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 			}
 			out.Modifiers = slice
 		}
+
+		out.PhpDocComment, out.PhpDoc = c.getPhpDocWithParse(n.ConstTkn)
+
 		out.Consts = c.convNodeSlice(n.Consts)
 		return out
 
@@ -1405,10 +1423,6 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out := &ir.ConstantStmt{}
 		out.Position = n.Position
 		out.EqualTkn = n.EqualTkn
-
-		// TODO:
-		out.PhpDocComment = c.getPhpDoc(out.EqualTkn)
-
 		out.ConstantName = c.convNode(n.Name).(*ir.Identifier)
 		out.Expr = c.convNode(n.Expr)
 		return out
@@ -1490,8 +1504,21 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.Position = n.Position
 		out.ElseTkn = n.ElseTkn
 		out.ColonTkn = n.ColonTkn
-		out.Stmt = c.convNode(n.Stmt)
 		out.AltSyntax = hasValue(n.ColonTkn)
+
+		out.Stmt = c.convNode(n.Stmt)
+
+		// Since the parser turns the else if statement into an ir.ElseStmt
+		// node with the Stmt field equal to the ir.IfStmt node, we need
+		// to convert this to an ir.ElseIfStmt node.
+		// For this, if ir.ElseStmt contains ir.IfStmt, then it is necessary to
+		// return the ir.IfStmt node, which contains the necessary fields,
+		// to create the ir.ElseIfStmt node in the future.
+		if ifStmt, ok := out.Stmt.(*ir.IfStmt); ok {
+			ifStmt.ElseTkn = n.ElseTkn
+			return ifStmt
+		}
+
 		return out
 
 	case *ast.StmtElseIf:
@@ -1509,7 +1536,9 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.Stmt = c.convNode(n.Stmt)
 
 		out.AltSyntax = hasValue(n.ColonTkn)
-		out.Merged = bytes.Contains(n.ElseIfTkn.Value, []byte("elseif"))
+
+		// directly converting ElseIf always means they are merged
+		out.Merged = true
 		return out
 
 	case *ast.StmtExpression:
@@ -1701,6 +1730,35 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.ElseIf = c.convNodeSlice(n.ElseIf)
 		out.Else = c.convNode(n.Else)
 
+		// Since the parser convert the else if statement into
+		// an ir.ElseStmt node with the Stmt field equal to the
+		// ir.IfStmt node, we need to convert this to an ir.ElseIfStmt node.
+		//
+		// For this, if ir.ElseStmt contains ir.IfStmt, then the converter returns
+		// the ir.IfStmt node, which contains the necessary fields to create
+		// the ir.ElseIfStmt node.
+		if ifStmt, ok := out.Else.(*ir.IfStmt); ok {
+			ifStmt.Position.StartPos = n.Position.StartPos
+			ifStmt.Position.StartLine = n.Position.StartLine
+
+			out.ElseIf = append(out.ElseIf, &ir.ElseIfStmt{
+				Position:            ifStmt.Position,
+				IfTkn:               ifStmt.IfTkn,
+				ElseTkn:             ifStmt.ElseTkn,
+				OpenParenthesisTkn:  ifStmt.OpenParenthesisTkn,
+				Cond:                ifStmt.Cond,
+				CloseParenthesisTkn: ifStmt.CloseParenthesisTkn,
+				ColonTkn:            ifStmt.ColonTkn,
+				Stmt:                ifStmt.Stmt,
+				AltSyntax:           ifStmt.AltSyntax,
+				Merged:              false,
+			})
+
+			out.ElseIf = append(out.ElseIf, ifStmt.ElseIf...)
+
+			out.Else = ifStmt.Else
+		}
+
 		out.AltSyntax = hasValue(n.ColonTkn)
 		return out
 
@@ -1727,8 +1785,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
 		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
 
-		// TODO:
-		out.PhpDocComment = c.getPhpDoc(out.InterfaceTkn)
+		out.PhpDocComment, out.PhpDoc = c.getPhpDocWithParse(n.InterfaceTkn)
 
 		out.InterfaceName = c.convNode(n.Name).(*ir.Identifier)
 		out.Extends = &ir.InterfaceExtendsStmt{
@@ -1873,10 +1930,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.SemiColonTkn = n.SemiColonTkn
 
 		out.Cond = c.convNode(n.Cond)
-		// TODO:
-		out.CaseList = &ir.CaseListStmt{
-			Cases: c.convNodeSlice(n.Cases),
-		}
+		out.Cases = c.convNodeSlice(n.Cases)
 		out.AltSyntax = hasValue(n.ColonTkn)
 		return out
 
@@ -1902,8 +1956,7 @@ func (c *Converter) convNode(n ast.Vertex) ir.Node {
 		out.OpenCurlyBracketTkn = n.OpenCurlyBracketTkn
 		out.CloseCurlyBracketTkn = n.CloseCurlyBracketTkn
 
-		// TODO:
-		out.PhpDocComment = c.getPhpDoc(out.TraitTkn)
+		out.PhpDocComment, out.PhpDoc = c.getPhpDocWithParse(out.TraitTkn)
 
 		out.TraitName = c.convNode(n.Name).(*ir.Identifier)
 		out.Stmts = c.convNodeSlice(n.Stmts)
@@ -2060,20 +2113,6 @@ func (c *Converter) getPhpDocWithParse(tok *token.Token) (doc string, parsed []p
 	return doc, parsed
 }
 
-func (c *Converter) getPhpDoc(tok *token.Token) (doc string) {
-	if tok == nil {
-		return doc
-	}
-
-	for _, ff := range tok.FreeFloating {
-		if ff.ID == token.T_DOC_COMMENT {
-			doc = string(ff.Value)
-		}
-	}
-
-	return doc
-}
-
 func (c *Converter) convRelativeName(n *ast.NameRelative) *ir.Name {
 	value := namePartsToString(n.Parts)
 	if c.namespace != "" {
@@ -2108,20 +2147,25 @@ func (c *Converter) convClass(n *ast.StmtClass) ir.Node {
 	extendsNode := c.convNode(n.Extends)
 	if extendsNode != nil {
 		extends = &ir.ClassExtendsStmt{
-			ClassName: extendsNode.(*ir.Name),
+			Position:   n.ExtendsTkn.Position,
+			ExtendsTkn: n.ExtendsTkn,
+			ClassName:  extendsNode.(*ir.Name),
 		}
 	}
-
-	implements := c.convNodeSlice(n.Implements)
 
 	class := ir.Class{
 		Extends: extends,
 		Stmts:   c.convNodeSlice(n.Stmts),
 	}
 
+	implements := c.convNodeSlice(n.Implements)
+
 	if len(implements) != 0 {
 		class.Implements = &ir.ClassImplementsStmt{
-			InterfaceNames: implements,
+			Position:                n.ImplementsTkn.Position,
+			ImplementsTkn:           n.ImplementsTkn,
+			ImplementsSeparatorTkns: n.ImplementsSeparatorTkns,
+			InterfaceNames:          implements,
 		}
 	}
 
@@ -2130,17 +2174,14 @@ func (c *Converter) convClass(n *ast.StmtClass) ir.Node {
 	if n.Name == nil {
 		// Anonymous class expression.
 		out := &ir.AnonClassExpr{
-			ClassTkn:                n.ClassTkn,
-			OpenParenthesisTkn:      n.OpenParenthesisTkn,
-			SeparatorTkns:           n.SeparatorTkns,
-			CloseParenthesisTkn:     n.CloseParenthesisTkn,
-			ExtendsTkn:              n.ExtendsTkn,
-			ImplementsTkn:           n.ImplementsTkn,
-			ImplementsSeparatorTkns: n.ImplementsSeparatorTkns,
-			OpenCurlyBracketTkn:     n.OpenCurlyBracketTkn,
-			CloseCurlyBracketTkn:    n.CloseCurlyBracketTkn,
-			Position:                n.Position,
-			Class:                   class,
+			ClassTkn:             n.ClassTkn,
+			OpenParenthesisTkn:   n.OpenParenthesisTkn,
+			SeparatorTkns:        n.SeparatorTkns,
+			CloseParenthesisTkn:  n.CloseParenthesisTkn,
+			OpenCurlyBracketTkn:  n.OpenCurlyBracketTkn,
+			CloseCurlyBracketTkn: n.CloseCurlyBracketTkn,
+			Position:             n.Position,
+			Class:                class,
 		}
 		if n.Args != nil {
 			out.Args = c.convNodeSlice(n.Args)
@@ -2149,15 +2190,12 @@ func (c *Converter) convClass(n *ast.StmtClass) ir.Node {
 	}
 
 	out := &ir.ClassStmt{
-		ClassTkn:                n.ClassTkn,
-		ExtendsTkn:              n.ExtendsTkn,
-		ImplementsTkn:           n.ImplementsTkn,
-		ImplementsSeparatorTkns: n.ImplementsSeparatorTkns,
-		OpenCurlyBracketTkn:     n.OpenCurlyBracketTkn,
-		CloseCurlyBracketTkn:    n.CloseCurlyBracketTkn,
-		Position:                n.Position,
-		Class:                   class,
-		ClassName:               c.convNode(n.Name).(*ir.Identifier),
+		ClassTkn:             n.ClassTkn,
+		OpenCurlyBracketTkn:  n.OpenCurlyBracketTkn,
+		CloseCurlyBracketTkn: n.CloseCurlyBracketTkn,
+		Position:             n.Position,
+		Class:                class,
+		ClassName:            c.convNode(n.Name).(*ir.Identifier),
 	}
 	if n.Modifiers != nil {
 		slice := make([]*ir.Identifier, len(n.Modifiers))

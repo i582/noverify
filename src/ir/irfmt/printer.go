@@ -1657,8 +1657,7 @@ func (p *PrettyPrinter) printStmtSwitch(n *ir.SwitchStmt) {
 
 	if n.AltSyntax {
 		writeString(p.w, ") :\n")
-		s := n.CaseList.Cases
-		p.printNodes(s)
+		p.printNodes(n.Cases)
 
 		writeString(p.w, "\n")
 		p.printIndent()
@@ -1667,7 +1666,7 @@ func (p *PrettyPrinter) printStmtSwitch(n *ir.SwitchStmt) {
 		writeString(p.w, ")")
 
 		writeString(p.w, " {\n")
-		p.printNodes(n.CaseList.Cases)
+		p.printNodes(n.Cases)
 		writeString(p.w, "\n")
 		p.printIndent()
 		writeString(p.w, "}")

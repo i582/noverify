@@ -1372,15 +1372,7 @@ func (b *blockWalker) handleIf(s *ir.IfStmt) bool {
 }
 
 func (b *blockWalker) handleElseIf(s *ir.ElseIfStmt) {
-	if s.Merged {
-		b.r.checkKeywordCase(s, "else")
-		if ff := (*s.GetFreeFloating())[freefloating.Else]; len(ff) != 0 {
-			rightmostPos := ff[len(ff)-1].Position
-			b.r.checkKeywordCasePos(s, rightmostPos.EndPos, "if")
-		}
-	} else {
-		b.r.checkKeywordCase(s, "elseif")
-	}
+	b.r.checkKeywordCase(s, "elseif")
 }
 
 func (b *blockWalker) iterateNextCases(cases []ir.Node, startIdx int) {
@@ -1414,9 +1406,9 @@ func (b *blockWalker) handleSwitch(s *ir.SwitchStmt) bool {
 	haveDefault := false
 	breakFlags := FlagBreak | FlagContinue
 
-	for i := range s.CaseList.Cases {
+	for i := range s.Cases {
 		idx := i
-		c := s.CaseList.Cases[i]
+		c := s.Cases[i]
 		var list []ir.Node
 
 		cond, list := getCaseStmts(c)
@@ -1444,9 +1436,9 @@ func (b *blockWalker) handleSwitch(s *ir.SwitchStmt) bool {
 			}
 
 			// allow to omit "break;" in the final statement
-			if idx != len(s.CaseList.Cases)-1 && b.ctx.exitFlags == 0 {
+			if idx != len(s.Cases)-1 && b.ctx.exitFlags == 0 {
 				// allow the fallthrough if appropriate comment is present
-				nextCase := s.CaseList.Cases[idx+1]
+				nextCase := s.Cases[idx+1]
 				if !caseHasFallthroughComment(nextCase) {
 					b.r.Report(c, LevelWarning, "caseBreak", "Add break or '// fallthrough' to the end of the case")
 				}
@@ -1456,7 +1448,7 @@ func (b *blockWalker) handleSwitch(s *ir.SwitchStmt) bool {
 				linksCount++
 
 				if b.ctx.exitFlags == 0 {
-					b.iterateNextCases(s.CaseList.Cases, idx+1)
+					b.iterateNextCases(s.Cases, idx+1)
 				}
 			}
 		})

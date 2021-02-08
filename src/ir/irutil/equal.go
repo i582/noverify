@@ -3,7 +3,6 @@ package irutil
 
 import (
 	"fmt"
-
 	"github.com/VKCOM/noverify/src/ir"
 )
 
@@ -48,6 +47,9 @@ func NodeEqual(x, y ir.Node) bool {
 			return false
 		}
 		if !NodeEqual(x.Dim, y.Dim) {
+			return false
+		}
+		if x.CurlyBrace != y.CurlyBrace {
 			return false
 		}
 		return true
@@ -389,15 +391,6 @@ func NodeEqual(x, y ir.Node) bool {
 			return false
 		}
 		return true
-	case *ir.CaseListStmt:
-		y, ok := y.(*ir.CaseListStmt)
-		if !ok || x == nil || y == nil {
-			return x == y
-		}
-		if !NodeSliceEqual(x.Cases, y.Cases) {
-			return false
-		}
-		return true
 	case *ir.CaseStmt:
 		y, ok := y.(*ir.CaseStmt)
 		if !ok || x == nil || y == nil {
@@ -451,6 +444,9 @@ func NodeEqual(x, y ir.Node) bool {
 			}
 		}
 		if !NodeSliceEqual(x.Consts, y.Consts) {
+			return false
+		}
+		if x.PhpDocComment != y.PhpDocComment {
 			return false
 		}
 		return true
@@ -620,9 +616,6 @@ func NodeEqual(x, y ir.Node) bool {
 			return false
 		}
 		if !NodeEqual(x.Expr, y.Expr) {
-			return false
-		}
-		if x.PhpDocComment != y.PhpDocComment {
 			return false
 		}
 		return true
@@ -1430,6 +1423,9 @@ func NodeEqual(x, y ir.Node) bool {
 		if !NodeEqual(x.Expr, y.Expr) {
 			return false
 		}
+		if x.PhpDocComment != y.PhpDocComment {
+			return false
+		}
 		return true
 	case *ir.ReferenceExpr:
 		y, ok := y.(*ir.ReferenceExpr)
@@ -1616,7 +1612,7 @@ func NodeEqual(x, y ir.Node) bool {
 		if !NodeEqual(x.Cond, y.Cond) {
 			return false
 		}
-		if !NodeEqual(x.CaseList, y.CaseList) {
+		if !NodeSliceEqual(x.Cases, y.Cases) {
 			return false
 		}
 		if x.AltSyntax != y.AltSyntax {

@@ -261,10 +261,6 @@ func NodeClone(x ir.Node) ir.Node {
 			clone.Expr = NodeClone(x.Expr)
 		}
 		return &clone
-	case *ir.CaseListStmt:
-		clone := *x
-		clone.Cases = NodeSliceClone(x.Cases)
-		return &clone
 	case *ir.CaseStmt:
 		clone := *x
 		if x.Cond != nil {
@@ -994,8 +990,8 @@ func NodeClone(x ir.Node) ir.Node {
 		if x.Cond != nil {
 			clone.Cond = NodeClone(x.Cond)
 		}
-		if x.CaseList != nil {
-			clone.CaseList = NodeClone(x.CaseList).(*ir.CaseListStmt)
+		if x.Cases != nil {
+			clone.Cases = NodeSliceClone(x.Cases)
 		}
 		return &clone
 	case *ir.TernaryExpr:

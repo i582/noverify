@@ -14,7 +14,7 @@ func (g *genIterate) Run() error {
 
 	var buf bytes.Buffer
 	for _, typ := range ctx.irPkg.types {
-		fmt.Fprintf(&buf, "func (n *%s) IterateTokens(cb func (*Token) bool) {\n", typ.name)
+		fmt.Fprintf(&buf, "func (n *%s) IterateTokens(cb func (*token.Token) bool) {\n", typ.name)
 		g.writeIterate(&buf, ctx.irPkg, typ)
 		fmt.Fprintf(&buf, "}\n\n")
 	}
