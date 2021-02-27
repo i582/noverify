@@ -22,10 +22,6 @@
           run: "make check",
         },
         {
-          name: "Generate coverage report",
-          run: "go test -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./src/tests/...",
-        },
-        {
           name: "Upload coverage to Codecov",
           uses: "codecov/codecov-action@v1",
         },
