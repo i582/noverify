@@ -67,6 +67,18 @@ WARNING bitwiseOps: Used | bitwise operator over bool operands, perhaps || is in
 MAYBE   callSimplify: Could simplify to array_key_exists('abc', $array) at testdata/embeddedrules/callSimplify.php:4
     $_ = in_array('abc', array_keys($array)); // bad
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+WARNING indexing: erroneous indexing of a variable with plain type at testdata/embeddedrules/indexing.php:12
+$_ = $int_var[1];
+     ^^^^^^^^^^^
+WARNING indexing: erroneous indexing of a variable with plain type at testdata/embeddedrules/indexing.php:13
+$_ = $float_var[1];
+     ^^^^^^^^^^^^^
+WARNING indexing: erroneous indexing of a variable with plain type at testdata/embeddedrules/indexing.php:14
+$_ = $null_var[1];
+     ^^^^^^^^^^^^
+WARNING indexing: erroneous indexing of a variable with plain type at testdata/embeddedrules/indexing.php:15
+$_ = $bool_var[1];
+     ^^^^^^^^^^^^
 WARNING indexingSyntax: a{i} indexing is deprecated since PHP 7.4, use a[i] instead at testdata/embeddedrules/indexingSyntax.php:14
     $_ = $a{0};
          ^^^^^
@@ -217,9 +229,15 @@ MAYBE   ternarySimplify: could replace the ternary with just $x > $y at testdata
 MAYBE   ternarySimplify: could rewrite as `$x ?: $y` at testdata/embeddedrules/ternarySimplify.php:12
     sink($x ? $x : $y);
          ^^^^^^^^^^^^
+WARNING indexing: erroneous indexing of a variable with plain type at testdata/embeddedrules/ternarySimplify.php:15
+    sink(isset($x[1]) ? $x[1] : $y);
+                        ^^^^^
 MAYBE   ternarySimplify: could rewrite as `$x[1] ?? $y` at testdata/embeddedrules/ternarySimplify.php:15
     sink(isset($x[1]) ? $x[1] : $y);
          ^^^^^^^^^^^^^^^^^^^^^^^^^
+WARNING indexing: erroneous indexing of a variable with plain type at testdata/embeddedrules/ternarySimplify.php:16
+    sink($x[1] ?? $y);
+         ^^^^^
 MAYBE   ternarySimplify: could rewrite as `(bool)($flags & SOME_MASK)` at testdata/embeddedrules/ternarySimplify.php:27
     sink(($flags & SOME_MASK) ? true : false);
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

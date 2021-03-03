@@ -69,7 +69,7 @@ func RegisterDefaultCommands() {
 // Line below implies that we have `https://github.com/VKCOM/phpstorm-stubs.git` cloned
 // to the `./src/cmd/stubs/phpstorm-stubs`.
 //
-//go:generate go-bindata -pkg stubs -nometadata -o ./stubs/phpstorm_stubs.go -ignore=\.idea -ignore=\.git ./stubs/phpstorm-stubs/...
+//1go:generate go-bindata -pkg stubs -nometadata -o ./stubs/phpstorm_stubs.go -ignore=\.idea -ignore=\.git ./stubs/phpstorm-stubs/...
 
 //go:generate go-bindata -pkg embeddedrules -nometadata -o ./embeddedrules/rules.go ./embeddedrules/rules.php
 

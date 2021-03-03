@@ -368,3 +368,40 @@ function indexingSyntax() {
      */
     $x{$y};
 }
+
+/**
+ * @comment Report the use of curly braces for indexing.
+ * @before  $x{0}
+ * @after   $x[0]
+ */
+function indexing() {
+    /**
+     * @warning erroneous indexing of a variable with int type
+     * @type int $x
+     */
+    $x[$_];
+
+    /**
+     * @warning erroneous indexing of a variable with float type
+     * @type float $x
+     */
+    $x[$_];
+
+    /**
+     * @warning erroneous indexing of a variable with null type
+     * @type null $x
+     */
+    $x[$_];
+
+    /**
+     * @warning erroneous indexing of a variable with bool type
+     * @type bool $x
+     */
+    $x[$_];
+
+    /**
+     * @warning erroneous indexing of a variable with resource type
+     * @type resource $x
+     */
+    $x[$_];
+}
