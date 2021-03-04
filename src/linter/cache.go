@@ -43,7 +43,8 @@ import (
 //     45 - added Mixins field to meta.ClassInfo
 //     46 - changed the way of inferring the return type of functions and methods
 //     47 - forced cache version invalidation due to the #921
-const cacheVersion = 47
+//     48 - added storage of constants with arrays
+const cacheVersion = 48
 
 var (
 	errWrongVersion = errors.New("Wrong cache version")

@@ -13,11 +13,12 @@ func _() {
 	_ = x[Float-2]
 	_ = x[String-3]
 	_ = x[Bool-4]
+	_ = x[Array-5]
 }
 
-const _ConstValueType_name = "UndefinedIntegerFloatStringBool"
+const _ConstValueType_name = "UndefinedIntegerFloatStringBoolArray"
 
-var _ConstValueType_index = [...]uint8{0, 9, 16, 21, 27, 31}
+var _ConstValueType_index = [...]uint8{0, 9, 16, 21, 27, 31, 36}
 
 func (i ConstValueType) String() string {
 	if i >= ConstValueType(len(_ConstValueType_index)-1) {

@@ -20,6 +20,31 @@ func Eval(st *meta.ClassParseState, e ir.Node) meta.ConstValue {
 	case *ir.ParenExpr:
 		return Eval(st, e.Expr)
 
+	case *ir.ArrayExpr:
+		isPlainArray := true
+		for _, item := range e.Items {
+			if item.Key != nil {
+				isPlainArray = false
+			}
+		}
+
+		if isPlainArray {
+			items := make(map[meta.ConstValue]meta.ConstValue, len(e.Items))
+			for i, item := range e.Items {
+				val := Eval(st, item.Val)
+				items[meta.NewIntConst(int64(i))] = val
+			}
+			return meta.NewArrayConst(items)
+		}
+
+		items := make(map[meta.ConstValue]meta.ConstValue, len(e.Items))
+		for _, item := range e.Items {
+			key := Eval(st, item.Key)
+			val := Eval(st, item.Val)
+			items[key] = val
+		}
+		return meta.NewArrayConst(items)
+
 	case *ir.ClassConstFetchExpr:
 		if !st.Info.IsIndexingComplete() {
 			return meta.UnknownValue

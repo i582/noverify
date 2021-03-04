@@ -196,6 +196,16 @@ func binaryPlusOpType(sc *meta.Scope, cs *meta.ClassParseState, left, right ir.N
 	// TODO: PHP will raise fatal error if one operand is array and other is not, so we may check it too
 	leftType := ExprTypeLocalCustom(sc, cs, left, custom)
 	rightType := ExprTypeLocalCustom(sc, cs, right, custom)
+
+	if cs.Info.IsIndexingComplete() {
+		leftTypeResolved := meta.NewTypesMapFromMap(ResolveTypes(cs.Info, cs.CurrentClass, leftType, ResolverMap{}))
+		rightTypeResolved := meta.NewTypesMapFromMap(ResolveTypes(cs.Info, cs.CurrentClass, rightType, ResolverMap{}))
+
+		if meta.IsArrayType(leftTypeResolved.String()) && meta.IsArrayType(rightTypeResolved.String()) {
+			return meta.MergeTypeMaps(leftTypeResolved, rightTypeResolved)
+		}
+	}
+
 	if leftType.IsArray() && rightType.IsArray() {
 		return meta.MergeTypeMaps(leftType, rightType)
 	}
@@ -352,6 +362,7 @@ func classConstFetchType(n *ir.ClassConstFetchExpr, cs *meta.ClassParseState) me
 	if !ok {
 		return meta.TypesMap{}
 	}
+
 	return meta.NewTypesMap(meta.WrapClassConstFetch(className, n.ConstantName.Value))
 }
 

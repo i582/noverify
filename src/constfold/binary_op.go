@@ -21,6 +21,22 @@ func Plus(x, y meta.ConstValue) meta.ConstValue {
 		case meta.Float:
 			return meta.NewFloatConst(x.GetFloat() + y.GetFloat())
 		}
+	case meta.Array:
+		switch y.Type {
+		case meta.Array:
+			left := x.GetArray()
+			right := y.GetArray()
+			items := make(map[meta.ConstValue]meta.ConstValue, len(left)+len(right))
+
+			for key, value := range right {
+				items[key] = value
+			}
+			for key, value := range left {
+				items[key] = value
+			}
+
+			return meta.NewArrayConst(items)
+		}
 	}
 	return meta.UnknownValue
 }

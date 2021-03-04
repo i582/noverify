@@ -2835,6 +2835,23 @@ namespace Foo {
 	runExprTypeTest(t, &exprTypeTestParams{code: code})
 }
 
+func TestClassConst(t *testing.T) {
+	code := `<?php
+class ABCClass {
+    const A = [10, "ss", 1.56, ["id" => 100, 100 => "ss"]];
+    const B = [100 => 56, "ss" => 43];
+
+    const C = self::A + self::B;
+}
+
+function f() {
+    exprtype(ABCClass::C, "array"); // Foo::C is float type
+}
+
+`
+	runExprTypeTest(t, &exprTypeTestParams{code: code})
+}
+
 func runExprTypeTest(t *testing.T, params *exprTypeTestParams) {
 	exprTypeTestImpl(t, params, false)
 }

@@ -1,6 +1,8 @@
 package meta
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"math"
 	"strconv"
@@ -15,6 +17,7 @@ const (
 	Float
 	String
 	Bool
+	Array
 )
 
 var (
@@ -52,6 +55,12 @@ func NewStringConst(v string) ConstValue {
 // preset bool type and the passed value v.
 func NewBoolConst(v bool) ConstValue {
 	return ConstValue{Type: Bool, Value: v}
+}
+
+// NewArrayConst returns a new constant value with the
+// preset array type and the passed value v.
+func NewArrayConst(v map[ConstValue]ConstValue) ConstValue {
+	return ConstValue{Type: Array, Value: v}
 }
 
 // IsValid checks that the value is valid and its type is not undefined.
@@ -93,6 +102,15 @@ func (c ConstValue) GetString() string {
 // been clearly defined and the probability of panic is 0.
 func (c ConstValue) GetBool() bool {
 	return c.Value.(bool)
+}
+
+// GetArray returns the value stored in c.Value cast to array type.
+//
+// Should be used with care, it can panic if the type is not equal to the
+// required one. Usually used in places where the type has already
+// been clearly defined and the probability of panic is 0.
+func (c ConstValue) GetArray() map[ConstValue]ConstValue {
+	return c.Value.(map[ConstValue]ConstValue)
 }
 
 // ToBool converts x constant to boolean constants following PHP conversion rules.
@@ -202,9 +220,55 @@ func (c ConstValue) GobEncode() ([]byte, error) {
 		}
 		str := fmt.Sprintf("%c%s", c.Type, x)
 		return []byte(str), nil
+	case Array:
+		val, ok := c.Value.(map[ConstValue]ConstValue)
+		if !ok {
+			return nil, fmt.Errorf("corrupted array")
+		}
+
+		buf := bytes.Buffer{}
+		buf.WriteByte(byte(c.Type))
+
+		err := binary.Write(&buf, binary.BigEndian, int32(len(val)))
+		if err != nil {
+			return nil, fmt.Errorf("error write array len")
+		}
+
+		for key, value := range val {
+			err = c.encodeArrayItem(key, &buf)
+			if err != nil {
+				return nil, err
+			}
+
+			err = c.encodeArrayItem(value, &buf)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return buf.Bytes(), err
 	}
 
-	return nil, fmt.Errorf("unhandeled type")
+	return nil, fmt.Errorf("unhandeled type %d", c.Type)
+}
+
+func (c ConstValue) encodeArrayItem(val ConstValue, buf *bytes.Buffer) error {
+	keyData, err := val.GobEncode()
+	if err != nil {
+		return fmt.Errorf("error encode %s: %v", val, err)
+	}
+
+	err = binary.Write(buf, binary.BigEndian, int32(len(keyData)))
+	if err != nil {
+		return fmt.Errorf("error write val '%s' len: %d: %v", val, len(keyData), err)
+	}
+
+	_, err = buf.Write(keyData)
+	if err != nil {
+		return fmt.Errorf("error write keyData %s: %v", keyData, err)
+	}
+
+	return nil
 }
 
 func (c *ConstValue) GobDecode(buf []byte) error {
@@ -240,9 +304,57 @@ func (c *ConstValue) GobDecode(buf []byte) error {
 		default:
 			return fmt.Errorf("invalid bool: %q", val)
 		}
+	case Array:
+		buf := bytes.NewBufferString(val)
+		var length int32
+		err := binary.Read(buf, binary.BigEndian, &length)
+		if err != nil {
+			return fmt.Errorf("error read len: %v", err)
+		}
+
+		arr := make(map[ConstValue]ConstValue, length)
+
+		for i := int32(0); i < length; i++ {
+			key, err := decodeArrayItem(buf)
+			if err != nil {
+				return fmt.Errorf("error read key: %v", err)
+			}
+
+			value, err := decodeArrayItem(buf)
+			if err != nil {
+				return fmt.Errorf("error read key: %v", err)
+			}
+
+			arr[key] = value
+		}
+
+		c.Value = arr
 	}
 
 	c.Type = tp
 
 	return nil
+}
+
+func decodeArrayItem(buf *bytes.Buffer) (val ConstValue, err error) {
+	var countByte int32
+
+	err = binary.Read(buf, binary.BigEndian, &countByte)
+	if err != nil {
+		return UnknownValue, fmt.Errorf("error read len: %v", err)
+	}
+
+	rawVal := make([]byte, countByte)
+
+	_, err = buf.Read(rawVal)
+	if err != nil {
+		return UnknownValue, fmt.Errorf("error read data for value: %v", err)
+	}
+
+	err = val.GobDecode(rawVal)
+	if err != nil {
+		return UnknownValue, fmt.Errorf("error decode %s: %v", rawVal, err)
+	}
+
+	return val, nil
 }

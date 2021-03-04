@@ -55,6 +55,7 @@ final class Consts {
   const C1 = GLOBAL_CONST;
   const C2 = 'a';
   const C3 = ['a'];
+  const C4 = [10, "ss", 1.56, ["id" => 100, 100 => "ss"]];
 }
 
 abstract class AbstractClass {
@@ -141,7 +142,7 @@ main();
 		//
 		// If cache encoding changes, there is a very high chance that
 		// encoded data lengh will change as well.
-		wantLen := 5332
+		wantLen := 5550
 		haveLen := buf.Len()
 		if haveLen != wantLen {
 			t.Errorf("cache len mismatch:\nhave: %d\nwant: %d", haveLen, wantLen)
@@ -150,7 +151,7 @@ main();
 		// 2. Check cache "strings" hash.
 		//
 		// It catches new fields in cached types, field renames and encoding of additional named attributes.
-		wantStrings := "cfbe2074534e9b4116dc9e4a629e5fcfba2344c363314643dce1f90156c9b20006a006cb4e7d724d9d5fca6c6034d078d95127a9cbb002f79fb68debc2a59def"
+		wantStrings := "a4f6cd954eda69f5ff3beabc02fea986ddfbaba3823a37f8ede18677025c3f10ca7c50e4a5221006cd4ff9537d7f608960f4c2db90a5e19a7edefc1eb3681938"
 		haveStrings := collectCacheStrings(buf.String())
 		if haveStrings != wantStrings {
 			t.Errorf("cache strings mismatch:\nhave: %q\nwant: %q", haveStrings, wantStrings)
