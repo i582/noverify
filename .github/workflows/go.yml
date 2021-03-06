@@ -21,6 +21,14 @@
             "body=$(go run . ./src/cmd/stat)
             echo ::set-output name=body::$body"
         },
+        {
+          name: "Create commit comment",
+          uses: "peter-evans/commit-comment@v1",
+          "with": 
+            {
+              body: ${{ steps.get-comment-body.outputs.body }},
+            },
+        },
       ],
     },
   },
