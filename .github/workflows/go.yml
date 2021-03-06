@@ -18,8 +18,8 @@
         {
           id: get-comment-body,
           run:
-            body=$(go run . ./src/cmd/stat)
-            echo ::set-output name=body::$body
+            "body=$(go run . ./src/cmd/stat)
+            echo ::set-output name=body::$body"
         },
         {
           name: "Create commit comment",
