@@ -15,6 +15,14 @@
         },
         {name: "Check out code into the Go module directory", uses: "actions/checkout@v1"},
         {name: "Tests and lints", run: "make check"},
+        {
+          name: "Create commit comment",
+          uses: "peter-evans/commit-comment@v1",
+          "with": {
+            body: | 
+              go run . ./src/cmd/stat
+          },
+        },
       ],
     },
   },
