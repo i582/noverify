@@ -15,6 +15,12 @@
         },
         {name: "Check out code into the Go module directory", uses: "actions/checkout@v1"},
         {name: "Tests and lints", run: "make check"},
+        {
+          id: get-comment-body,
+          run:
+            "body=$(go run . ./src/cmd/stat)
+            echo ::set-output name=body::$body"
+        },
       ],
     },
   },
