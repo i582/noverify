@@ -17,7 +17,7 @@
         {name: "Tests and lints", run: "make check"},
         {
           id: get-comment-body,
-          run: |
+          run:
             body=$(go run . ./src/cmd/stat)
             echo ::set-output name=body::$body
         },
