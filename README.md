@@ -1,6 +1,6 @@
 ## NoVerify ![Build Status](https://github.com/VKCOM/noverify/workflows/Go/badge.svg)
 
-![](/docs/noverify_small.png)
+![](/docs/noverify_small.png)1
 
 NoVerify is a PHP linter: it finds possible bugs and style violations in your code.
 
