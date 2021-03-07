@@ -21,7 +21,7 @@
         },
         {
           id: get-comment-body,
-          run: "echo ::set-output name=body::$(go run ./src/cmd/stat)",
+          run: "echo ::set-output name=body::\"$(go run ./src/cmd/stat)\"",
         },
         {
           name: "Create commit comment",
