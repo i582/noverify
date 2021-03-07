@@ -22,11 +22,11 @@
         {
           id: get-comment-body,
           run:
-            'body=$(go run ./src/cmd/stat)
+            "body=$(go run ./src/cmd/stat)
             body='${ body//'%'/'%25' }'
-            body='"'${ body//$'\n'/'%0A' }'
-            body='''${ body//$'\r'/'%0D' }'
-            echo ::set-output name=body::$body'
+            body='${ body//$'\n'/'%0A' }'
+            body='${ body//$'\r'/'%0D' }'
+            echo ::set-output name=body::$body"
         },
         {
           name: "Create commit comment",
