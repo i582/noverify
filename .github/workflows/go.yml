@@ -21,7 +21,7 @@
         },
         {
           id: get-comment-body,
-          run: `body=$(go run ./src/cmd/stat); body="${body//'%'/'%25'}"; body="${body//\$'\n'/'%0A'}"; body="${body//\$'\r'/'%0D'}"; echo ::set-output name=body::$body`,
+          run: `body=$(go run ./src/cmd/stat); body="${body//'%'/'%25'}"; body="${body//\\$'\n'/'%0A'}"; body="${body//\\$'\r'/'%0D'}"; echo ::set-output name=body::$body`,
           shell: "bash",
         },
         {
