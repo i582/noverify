@@ -26,7 +26,7 @@ NoVerify by default has the following checks:
 - Call to undefined function/method
 - Fetching of undefined constant/class property
 - Class not found
-- PHPDoc is incorrect
+- PHPDoc is incorrect1
 - Undefined variable
 - Variable not always defined
 - Case without "break;"
