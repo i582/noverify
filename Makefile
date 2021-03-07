@@ -18,4 +18,8 @@ check:
 	@go test -race ./example/custom
 	@echo "everything is OK"
 
-.PHONY: check build-release
+stat:
+	go run . check -output=reports.json -output-json ./src/tests/golden/testdata
+	go run ./src/cmd/stat
+
+.PHONY: check build-release stat
