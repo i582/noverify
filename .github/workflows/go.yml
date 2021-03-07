@@ -21,15 +21,13 @@
         },
         {
           id: get-comment-body,
-          run:
-            "body=$(go run ./src/cmd/stat)
-            echo ::set-output name=body::$body"
+          run: "echo ::set-output name=body::$(go run ./src/cmd/stat)",
         },
         {
           name: "Create commit comment",
           uses: "peter-evans/commit-comment@v1",
           "with": {
-            body: "11",
+            body: "${{ steps.get-comment-body.outputs.body }}",
           },
         },
       ],
