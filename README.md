@@ -18,7 +18,7 @@ NoVerify is a PHP linter: it finds possible bugs and style violations in your co
 
 ## Default lints
 
-NoVerify by default has the following checks:
+NoVerify by default has the following checks
 
 - Unreachable code
 - Array access to non-array type 
