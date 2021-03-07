@@ -17,7 +17,7 @@
 #        {name: "Tests and lints", run: "make check"},
         {
           name: "Run linter over test",
-          run: "go run . check -output=reports.json -output-json ./src/tests/golden/testdata",
+          run: "make -i stat",
         },
         {
           id: get-comment-body,
