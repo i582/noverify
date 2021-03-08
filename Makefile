@@ -22,8 +22,8 @@ stat:
 	go run . check -output=reports.json -output-json ./src/tests/golden/testdata
 
 stat-master:
-	git clone https://github.com/VKCOM/noverify.git noverify-master;
-	cd noverify-master;
+	git clone https://github.com/VKCOM/noverify.git noverify-master
+	cd noverify-master
 	go run . check -output=../reports-master.json -output-json ./src/tests/golden/testdata
 	cd ..
 
