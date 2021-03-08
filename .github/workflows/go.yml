@@ -18,10 +18,10 @@
         {
           name: "Run linter over test (master branch)",
           run: "
-          git clone https://github.com/VKCOM/noverify.git noverify-master\
-          cd noverify-master\
-          go run . check -output=../reports-master.json -output-json ./src/tests/golden/testdata\
-          cd ..\
+          git clone https://github.com/VKCOM/noverify.git noverify-master \
+          cd noverify-master \
+          go run . check -output=../reports-master.json -output-json ./src/tests/golden/testdata \
+          cd .. \
           ",
         },
         {
