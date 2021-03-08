@@ -14,5 +14,9 @@ check:
 	@go test -coverprofile=coverage.txt -covermode=atomic -count 3 -race -v ./src/...
 	@go test -race ./example/custom
 	@echo "everything is OK"
+	
+cover:
+	go install github.com/mattn/goveralls
+	goveralls -package github.com/i582/noverify -coverprofile=coverage.out -service travis-ci -repotoken ${COVERALLS_TOKEN}
 
-.PHONY: check
+.PHONY: check cover
