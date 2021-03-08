@@ -607,7 +607,7 @@ func (b *blockLinter) addFixForArray(arr *ir.ArrayExpr) {
 
 func (b *blockLinter) checkArray(arr *ir.ArrayExpr) {
 	if !arr.ShortSyntax {
-		b.report(arr, LevelNotice, "arraySyntax", "Use of old array syntax (use short form instead)")
+		// b.report(arr, LevelNotice, "arraySyntax", "Use of old array syntax (use short form instead)")
 		b.addFixForArray(arr)
 	}
 
