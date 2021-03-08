@@ -51,7 +51,7 @@ func main() {
 	flag.Parse()
 
 	reports := loadReportsFile("reports.json").Reports
-	reportsMaster := loadReportsFile("reports-master.json").Reports
+	reportsMaster := loadReportsFile("noverify-master/reports-master.json").Reports
 
 	diff := reportsDiff(reports, reportsMaster)
 
