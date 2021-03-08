@@ -164,7 +164,7 @@ func (b *blockWalker) reportDeadCode(n ir.Node) {
 	}
 
 	b.ctx.deadCodeReported = true
-	b.r.Report(n, LevelWarning, "deadCode", "Unreachable code")
+	// b.r.Report(n, LevelWarning, "deadCode", "Unreachable code")
 }
 
 func (b *blockWalker) handleComments(n ir.Node) {
