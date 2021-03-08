@@ -23,7 +23,7 @@ stat:
 
 stat-master:
 	git clone https://github.com/VKCOM/noverify.git noverify-master
-	cd noverify-master
+	cd ./noverify-master
 	go run . check -output=../reports-master.json -output-json ./src/tests/golden/testdata
 	cd ..
 
