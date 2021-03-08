@@ -22,9 +22,10 @@ stat:
 	go run . check -output=reports.json -output-json ./src/tests/golden/testdata
 
 stat-master:
-	git clone https://github.com/VKCOM/noverify.git ./noverify-master
-	go build -pkgdir ./noverify-master -o ./noverify-master/noverify
-	./noverify-master/noverify check -output=reports-master.json -output-json ./src/tests/golden/testdata
+	#git clone https://github.com/VKCOM/noverify.git ./noverify-master
+	#go build -pkgdir ./noverify-master ./noverify-master
+	go get github.com/VKCOM/noverify
+	@$(GOPATH_DIR)/bin/noverify check -output=reports-master.json -output-json ./src/tests/golden/testdata
 	ls
 
 .PHONY: check build-release stat stat-master
