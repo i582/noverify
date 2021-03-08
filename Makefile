@@ -17,6 +17,6 @@ check:
 	
 cover:
 	go install github.com/mattn/goveralls
-	$GOPATH/bin/goveralls -package github.com/i582/noverify -coverprofile=coverage.out -service travis-ci -repotoken ${COVERALLS_TOKEN}
+	$(GOPATH_DIR)/bin/goveralls -package github.com/i582/noverify -coverprofile=coverage.out -service travis-ci -repotoken ${COVERALLS_TOKEN}
 
 .PHONY: check cover
