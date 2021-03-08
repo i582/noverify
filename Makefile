@@ -23,9 +23,8 @@ stat:
 
 stat-master:
 	git clone https://github.com/VKCOM/noverify.git ./noverify-master
-	cd ./noverify-master
-	go run . check -output=reports-master.json -output-json ./src/tests/golden/testdata
+	go build -pkgdir ./noverify-master -o ./noverify-master/noverify
+	./noverify-master/noverify check -output=reports-master.json -output-json ./src/tests/golden/testdata
 	ls
-	cd ..
 
 .PHONY: check build-release stat stat-master
