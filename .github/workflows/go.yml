@@ -16,8 +16,13 @@
         { name: "Check out code into the Go module directory", uses: "actions/checkout@v1" },
         #        {name: "Tests and lints", run: "make check"},
         {
+          name: "Clone master branch",
+          run: "git clone https://github.com/VKCOM/noverify.git ./noverify-master",
+        },
+        {
           name: "Run linter over test (master branch)",
           run: "make -i stat-master",
+          working-directory: ./noverify-master,
         },
         {
           name: "Run linter over test (current branch)",
