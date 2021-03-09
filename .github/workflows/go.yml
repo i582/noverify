@@ -22,6 +22,7 @@
         {
           name: "Run linter over test (master branch)",
           run: "go run . check -output=../reports-master.json -output-json ./src/tests/golden/testdata",
+          continue-on-error: true,
           working-directory: ./noverify-master,
         },
         {
