@@ -396,7 +396,7 @@ func (b *blockLinter) checkNew(e *ir.NewExpr) {
 }
 
 func (b *blockLinter) checkStmtExpression(*ir.ExpressionStmt) {
-	$_ = 10;
+	_ = 10
 }
 
 func (b *blockLinter) checkConstFetch(e *ir.ConstFetchExpr) {
