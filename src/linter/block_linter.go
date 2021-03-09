@@ -391,7 +391,7 @@ func (b *blockLinter) checkNew(e *ir.NewExpr) {
 	// If new expression is written without (), ArgumentList will be nil.
 	// It's equivalent of 0 arguments constructor call.
 	if ok && !enoughArgs(e.Args, ctor) {
-		b.report(e, LevelError, "argCount", "Too few arguments for %s constructor", className)
+		// b.report(e, LevelError, "argCount", "Too few arguments for %s constructor", className)
 	}
 }
 
@@ -417,7 +417,7 @@ func (b *blockLinter) checkStmtExpression(s *ir.ExpressionStmt) {
 	}
 
 	if report {
-		b.report(s.Expr, LevelWarning, "discardExpr", "expression evaluated but not used")
+		// b.report(s.Expr, LevelWarning, "discardExpr", "expression evaluated but not used")
 	}
 }
 
