@@ -417,7 +417,7 @@ func (b *blockLinter) checkStmtExpression(s *ir.ExpressionStmt) {
 	}
 
 	if report {
-		b.report(s.Expr, LevelWarning, "discardExpr", "expression evaluated but not used")
+		// b.report(s.Expr, LevelWarning, "discardExpr", "expression evaluated but not used")
 	}
 }
 
