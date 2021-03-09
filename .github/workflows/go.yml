@@ -41,7 +41,7 @@
         {
           name: "Create commit comment",
           uses: "peter-evans/commit-comment@v1",
-          if: ${ { github.event_name == 'pull_request' } },
+          if: ${{ github.event_name == 'pull_request' }},
           "with": {
             body: "${{ steps.get-comment-body.outputs.body }}",
           },
