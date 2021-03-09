@@ -21,7 +21,7 @@
         },
         {
           name: "Run linter over test (master branch)",
-          run: "make -i stat-master",
+          run: "go run . check -output=../reports-master.json -output-json ./src/tests/golden/testdata",
           working-directory: ./noverify-master,
         },
         {
