@@ -47,17 +47,20 @@ type ReportDiff struct {
 
 func main() {
 	var markdown bool
+	var newReportsPath string
+	var oldReportsPath string
 	flag.BoolVar(&markdown, "m", false, "print with markdown table")
+	flag.StringVar(&newReportsPath, "new", "reports.json", "reports from current branch")
+	flag.StringVar(&oldReportsPath, "old", "reports-master.json", "reports from master branch")
 	flag.Parse()
 
-	reports := loadReportsFile("reports.json").Reports
-	reportsMaster := loadReportsFile("reports-master.json").Reports
+	reports := loadReportsFile(newReportsPath).Reports
+	reportsMaster := loadReportsFile(oldReportsPath).Reports
 
 	diff := reportsDiff(reports, reportsMaster)
 
 	diffByType := getReportsDiffByType(diff)
 	masterCountByType := getReportsByType(reportsMaster)
-
 	diffSorted := getSortedDiffSlice(diffByType)
 
 	if markdown {
@@ -181,7 +184,6 @@ func reportsDiff(now, master []*linter.Report) (diff []ReportDiff) {
 
 func getReportsByType(reports []*linter.Report) map[string]int {
 	reportsByType := map[string]int{}
-
 	for _, report := range reports {
 		reportsByType[report.CheckName]++
 	}
@@ -190,7 +192,6 @@ func getReportsByType(reports []*linter.Report) map[string]int {
 
 func getReportsDiffByType(reportDiffs []ReportDiff) map[string]*ReportCount {
 	reportsByType := map[string]*ReportCount{}
-
 	for _, diff := range reportDiffs {
 		rep, ok := reportsByType[diff.Report.CheckName]
 		if !ok {

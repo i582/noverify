@@ -13,8 +13,10 @@
           "with": { "go-version": 1.13 },
           id: "go",
         },
-        { name: "Check out code into the Go module directory", uses: "actions/checkout@v1" },
-        #        {name: "Tests and lints", run: "make check"},
+        {
+          name: "Check out code into the Go module directory",
+          uses: "actions/checkout@v1",
+        },
         {
           name: "Clone master branch",
           run: "git clone https://github.com/VKCOM/noverify.git ./noverify-master",
@@ -27,7 +29,8 @@
         },
         {
           name: "Run linter over test (current branch)",
-          run: "make -i stat",
+          run: "go run . check -output=reports.json -output-json ./src/tests/golden/testdata",
+          continue-on-error: true,
         },
         {
           id: get-comment-body,
@@ -45,6 +48,10 @@
           "with": {
             body: "${{ steps.get-comment-body.outputs.body }}",
           },
+        },
+        {
+          name: "Tests and lints",
+          run: "make check",
         },
       ],
     },
