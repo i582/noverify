@@ -1412,6 +1412,7 @@ func (d *rootWalker) parseFuncArgs(params []ir.Node, parTypes phpDocParamsMap, s
 		if p.VariableType != nil {
 			if varTyp, ok := d.parseTypeNode(p.VariableType); ok {
 				typ = varTyp
+				typ.MarkAsPrecise()
 			}
 		} else if typ.IsEmpty() && p.DefaultValue != nil {
 			typ = solver.ExprTypeLocal(sc, d.ctx.st, p.DefaultValue)
@@ -1430,8 +1431,9 @@ func (d *rootWalker) parseFuncArgs(params []ir.Node, parTypes phpDocParamsMap, s
 		sc.AddVarName(v.Name, typ, "param", meta.VarAlwaysDefined)
 
 		par := meta.FuncParam{
-			Typ:   typ.Immutable(),
-			IsRef: p.ByRef,
+			Typ:      typ.Immutable(),
+			IsRef:    p.ByRef,
+			Variadic: p.Variadic,
 		}
 
 		par.Name = v.Name
@@ -1898,6 +1900,7 @@ func (d *rootWalker) checkImplemented(n ir.Node, nameUsed string, otherClass met
 		return
 	}
 	d.checkNameCase(n, nameUsed, otherClass.Name)
+
 	visited := make(map[string]struct{}, 4)
 	d.checkImplementedStep(n, nameUsed, otherClass, visited)
 }
@@ -1908,28 +1911,83 @@ func (d *rootWalker) checkImplementedStep(n ir.Node, className string, otherClas
 		return
 	}
 	visited[className] = struct{}{}
+
 	for _, ifaceMethod := range otherClass.Methods.H {
-		m, ok := solver.FindMethod(d.metaInfo(), d.ctx.st.CurrentClass, ifaceMethod.Name)
-		if !ok || !m.Implemented {
+		foundMethod, ok := solver.FindMethod(d.metaInfo(), d.ctx.st.CurrentClass, ifaceMethod.Name)
+		if !ok || !foundMethod.Implemented {
 			d.Report(n, LevelError, "unimplemented", "Class %s must implement %s::%s method",
 				d.ctx.st.CurrentClass, className, ifaceMethod.Name)
 			continue
 		}
-		if m.Info.Name != ifaceMethod.Name {
+		if foundMethod.Info.Name != ifaceMethod.Name {
 			d.Report(n, LevelNotice, "nameMismatch", "%s::%s should be spelled as %s::%s",
-				d.ctx.st.CurrentClass, m.Info.Name, className, ifaceMethod.Name)
+				d.ctx.st.CurrentClass, foundMethod.Info.Name, className, ifaceMethod.Name)
 		}
+
+		d.checkMethodSignaturesCompatible(n, ifaceMethod, foundMethod.Info)
 	}
+
 	for _, ifaceName := range otherClass.ParentInterfaces {
 		iface, ok := d.metaInfo().GetClass(ifaceName)
 		if ok {
 			d.checkImplementedStep(n, ifaceName, iface, visited)
 		}
 	}
+
 	if otherClass.Parent != "" {
 		class, ok := d.metaInfo().GetClass(otherClass.Parent)
 		if ok {
 			d.checkImplementedStep(n, otherClass.Parent, class, visited)
+		}
+	}
+}
+
+func (d *rootWalker) checkMethodSignaturesCompatible(n ir.Node, fn1, fn2 meta.FuncInfo) {
+	if len(fn1.Params) != len(fn2.Params) {
+		d.Report(n, LevelNotice, "unimplemented", "count params mismatch (want: %d, have: %d)", len(fn1.Params), len(fn2.Params))
+	}
+
+	if len(fn1.Params) != 0 && len(fn2.Params) != 0 {
+		fn1HasVariadic := fn1.Params[len(fn1.Params)-1].Variadic
+		fn2HasVariadic := fn2.Params[len(fn2.Params)-1].Variadic
+
+		if fn1HasVariadic != fn2HasVariadic {
+			msg := "last param of method '%s' must be variadic"
+
+			if !fn1HasVariadic {
+				msg = "last param of method '%s' must not be variadic"
+			}
+
+			d.Report(n, LevelNotice, "unimplemented", msg, fn2.Name)
+		}
+
+		for i := 0; i < len(fn1.Params); i++ {
+			param1 := fn1.Params[i]
+			param2 := fn2.Params[i]
+
+			if param1.IsRef != param2.IsRef {
+				msg := "param %d of method '%s' must have a reference"
+
+				if !param1.IsRef {
+					msg = "param %d of method '%s' must not have a reference"
+				}
+
+				d.Report(n, LevelNotice, "unimplemented", msg, i+1, fn2.Name)
+			}
+
+			if param1.Typ.Len() == 1 && param2.Typ.Len() == 1 &&
+				param1.Typ.IsPrecise() && param2.Typ.IsPrecise() {
+				param1TypeStr := param1.Typ.String()
+				param2TypeStr := param2.Typ.String()
+
+				if param1TypeStr != param2TypeStr {
+					if meta.IsClassType(param1TypeStr) && meta.IsClassType(param2TypeStr) {
+
+					} else {
+						d.Report(n, LevelNotice, "unimplemented", "param %d of method '%s' must have %s type", i+1, fn2.Name, param1TypeStr)
+					}
+				}
+			}
 		}
 	}
 }

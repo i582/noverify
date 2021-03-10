@@ -16,6 +16,11 @@ type Node interface {
 	IterateTokens(func(*token.Token) bool)
 }
 
+type Expr interface {
+	Node
+	expr()
+}
+
 // Visitor is an interface for basic IR nodes traversal.
 type Visitor interface {
 	EnterNode(Node) bool

@@ -53,6 +53,10 @@ func (m *TypesMap) MarkAsImprecise() {
 	m.flags &^= mapPrecise
 }
 
+func (m *TypesMap) MarkAsPrecise() {
+	m.flags |= mapPrecise
+}
+
 func (m TypesMap) isImmutable() bool { return m.flags&mapImmutable != 0 }
 
 // IsResolved reports whether all types inside types map are resolved.

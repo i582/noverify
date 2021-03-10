@@ -1493,3 +1493,37 @@ function a1(Foo $a, foo $b, boo $c) {}
 	}
 	test.RunAndMatch()
 }
+
+func TestImplementedMethodsSignatureCompatible(t *testing.T) {
+	test := linttest.NewSuite(t)
+	test.AddFile(`<?php
+interface IA {
+//	public function method1($a);
+//	public function method2($a, ...$b);
+//	public function method3($a, $b);
+//	public function method4($a, $b);
+//	public function method5($a, &$b);
+	public function method6(int $a, string $b);
+}
+
+class B implements IA {
+//	public function method1() {}
+//	public function method2($a, $b) {}
+//	public function method3($a, ...$b) {}
+//	public function method4($a, &$b) {}
+//	public function method5($a, $b) {}
+	public function method6(?string $a, string $b) {}
+}
+
+`)
+
+	test.Expect = []string{
+		`count params mismatch (want: 1, have: 0)`,
+		`last param of method 'method2' must be variadic`,
+		`last param of method 'method3' must not be variadic`,
+		`param 2 of method 'method4' must not have a reference`,
+		`param 2 of method 'method5' must have a reference`,
+		`param 1 of method 'method6' must have int type`,
+	}
+	linttest.RunFilterMatch(test, "unimplemented")
+}

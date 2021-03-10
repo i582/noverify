@@ -15,9 +15,10 @@ type PerFile struct {
 }
 
 type FuncParam struct {
-	IsRef bool
-	Name  string
-	Typ   TypesMap
+	IsRef    bool
+	Name     string
+	Typ      TypesMap
+	Variadic bool
 }
 
 type PhpDocInfo struct {
