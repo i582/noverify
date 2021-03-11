@@ -15,7 +15,7 @@ func mixedType() map[string]struct{} {
 		// At least until we're 100% sure this is safe.
 		panic(fmt.Sprintf("mixed type map was modified: %v", sharedMixedType))
 	}
-	return sharedMixedType
+	return map[string]struct{}{"mixed": {}}
 }
 
 // resolveType resolves function calls, method calls and global variables.

@@ -104,6 +104,8 @@ type blockWalker struct {
 
 	inArrowFunction    bool
 	parentBlockWalkers []*blockWalker // all parent block walkers if we handle nested arrow functions.
+
+	typesWalker *TypesWalker
 }
 
 func newBlockWalker(r *rootWalker, sc *meta.Scope) *blockWalker {
@@ -238,6 +240,8 @@ func (b *blockWalker) EnterNode(n ir.Node) (res bool) {
 			if v.Expr != nil {
 				v.Expr.Walk(b)
 			}
+
+			// fmt.Println(b.typesWalker.TypeOf(vv))
 		}
 		res = false
 	case *ir.Root:
@@ -884,6 +888,11 @@ func (b *blockWalker) handleStaticPropertyFetch(e *ir.StaticPropertyFetchExpr) b
 }
 
 func (b *blockWalker) handleArray(arr *ir.ArrayExpr) bool {
+
+	if b.r.metaInfo().IsIndexingComplete() {
+		// fmt.Println(b.typesWalker.TypeOf(arr.Items[3].Val))
+	}
+
 	return b.handleArrayItems(arr.Items)
 }
 
@@ -919,6 +928,11 @@ func (b *blockWalker) handleForeach(s *ir.ForeachStmt) bool {
 			solver.ExprTypeLocalCustom(b.ctx.sc, b.r.ctx.st, s.Expr, b.ctx.customTypes).Iterate(func(typ string) {
 				b.handleVariableNode(s.Variable, meta.NewTypesMap(meta.WrapElemOf(typ)), "foreach_value")
 			})
+
+			if b.r.metaInfo().IsIndexingComplete() {
+				// fmt.Println(b.typesWalker.TypeOf(s.Expr))
+				// fmt.Println(b.typesWalker.TypeOf(s.Key))
+			}
 
 			b.handleVariableNode(s.Key, arrayKeyType, "foreach_key")
 			if list, ok := s.Variable.(*ir.ListExpr); ok {
@@ -1632,6 +1646,8 @@ func (b *blockWalker) handleAssign(a *ir.Assign) bool {
 	b.handleComments(a.Variable)
 
 	a.Expression.Walk(b)
+
+	// fmt.Println(b.typesWalker.TypeOf(a.Expr))
 
 	switch v := a.Variable.(type) {
 	case *ir.ArrayDimFetchExpr:

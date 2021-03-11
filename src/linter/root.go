@@ -716,6 +716,8 @@ func (d *rootWalker) handleFuncStmts(params []meta.FuncParam, uses, stmts []ir.N
 	for _, createFn := range d.customBlock {
 		b.custom = append(b.custom, createFn(&BlockContext{w: b}))
 	}
+	t := NewTypesWalker(d.ctx.st)
+	b.typesWalker = t
 
 	for _, useExpr := range uses {
 		var byRef bool
@@ -759,6 +761,11 @@ func (d *rootWalker) handleFuncStmts(params []meta.FuncParam, uses, stmts []ir.N
 	}
 	for _, s := range stmts {
 		b.addStatement(s)
+
+		if d.metaInfo().IsIndexingComplete() {
+			s.Walk(t)
+		}
+
 		s.Walk(b)
 	}
 	b.flushUnused()

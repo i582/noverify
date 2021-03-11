@@ -37,6 +37,10 @@ type TypesMap struct {
 	m     map[string]struct{}
 }
 
+func (m *TypesMap) Raw() map[string]struct{} {
+	return m.m
+}
+
 // IsPrecise reports whether the type set represented by the map is precise
 // enough to perform typecheck-like analysis.
 //
