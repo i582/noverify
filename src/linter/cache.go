@@ -62,7 +62,7 @@ type fileMeta struct {
 	FunctionOverrides meta.FunctionsOverrideMap
 }
 
-func writeMetaCache(w *bufio.Writer, root *rootWalker) error {
+func writeMetaCache(w *bufio.Writer, root *RootWalker) error {
 	if err := writeMetaCacheHeader(w, root); err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func writeMetaCache(w *bufio.Writer, root *rootWalker) error {
 	return nil
 }
 
-func createMetaCacheFile(filename, cacheFile string, root *rootWalker) error {
+func createMetaCacheFile(filename, cacheFile string, root *RootWalker) error {
 	tmpPath := cacheFile + ".tmp"
 	if err := os.MkdirAll(filepath.Dir(tmpPath), 0777); err != nil {
 		return err
@@ -162,7 +162,7 @@ func updateMetaInfo(info *meta.Info, filename string, m *fileMeta) {
 	}
 }
 
-func writeMetaCacheHeader(wr *bufio.Writer, root *rootWalker) error {
+func writeMetaCacheHeader(wr *bufio.Writer, root *RootWalker) error {
 	if err := wr.WriteByte(cacheVersion); err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func writeMetaCacheHeader(wr *bufio.Writer, root *rootWalker) error {
 	return nil
 }
 
-func customCachersEncode(wr *bufio.Writer, root *rootWalker) error {
+func customCachersEncode(wr *bufio.Writer, root *RootWalker) error {
 	for i, c := range root.custom {
 		cacher := root.config.Checkers.cachers[i]
 		if cacher == nil {

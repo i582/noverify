@@ -130,7 +130,7 @@ func (RootCheckerDefaults) AfterLeaveNode(ir.Node)  {}
 
 // RootContext is the context for root checker to run on.
 type RootContext struct {
-	w *rootWalker
+	w *RootWalker
 }
 
 // ParsePHPDoc returns parsed phpdoc comment parts.

@@ -60,7 +60,7 @@ func TestParseClassPHPDoc(t *testing.T) {
 
 	l := NewLinter(NewConfig())
 	st := &meta.ClassParseState{Info: l.MetaInfo()}
-	walker := rootWalker{ctx: newRootContext(l.config, NewWorkerContext(), st)}
+	walker := RootWalker{ctx: newRootContext(l.config, NewWorkerContext(), st)}
 	for _, test := range tests {
 		docString := fmt.Sprintf(`/** %s */`, test.line)
 		doc := phpdoc.Parse(walker.ctx.phpdocTypeParser, docString)

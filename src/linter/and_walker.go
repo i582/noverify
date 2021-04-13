@@ -8,7 +8,7 @@ import (
 )
 
 // andWalker walks if conditions and adds isset/!empty/instanceof variables
-// to the associated block walker.
+// to the associated block Walker.
 //
 // All variables defined by andWalker should be removed after
 // if body is handled, this is why we collect varsToDelete.

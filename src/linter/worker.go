@@ -34,7 +34,7 @@ type ParseResult struct {
 	RootNode *ir.Root
 	Reports  []*Report
 
-	walker *rootWalker
+	Walker *RootWalker
 }
 
 // Worker is a linter handle that is expected to be executed in a single goroutine context.
@@ -142,7 +142,7 @@ func (w *Worker) ParseContents(fileInfo workspace.FileInfo) (result ParseResult,
 	result = ParseResult{
 		RootNode: rootIR,
 		Reports:  walker.reports,
-		walker:   walker,
+		Walker:   walker,
 	}
 	return result, nil
 }
@@ -152,7 +152,7 @@ func (w *Worker) parseWithCache(cacheFilename string, file workspace.FileInfo) e
 	if err != nil {
 		return err
 	}
-	return createMetaCacheFile(file.Name, cacheFilename, result.walker)
+	return createMetaCacheFile(file.Name, cacheFilename, result.Walker)
 }
 
 // IndexFile parses the file and fills in the meta info. Can use cache.
@@ -160,7 +160,7 @@ func (w *Worker) IndexFile(file workspace.FileInfo) error {
 	if w.config.CacheDir == "" {
 		result, err := w.ParseContents(file)
 		if w != nil {
-			updateMetaInfo(w.info, file.Name, &result.walker.meta)
+			updateMetaInfo(w.info, file.Name, &result.Walker.meta)
 		}
 		return err
 	}
@@ -246,14 +246,14 @@ func (w *Worker) doParseFile(f workspace.FileInfo) []*Report {
 	return reports
 }
 
-func (w *Worker) analyzeFile(file *workspace.File, rootNode *ir.Root) (*rootWalker, error) {
+func (w *Worker) analyzeFile(file *workspace.File, rootNode *ir.Root) (*RootWalker, error) {
 	if rootNode == nil {
 		lintdebug.Send("Could not parse %s at all due to errors", file.Name())
 		return nil, errors.New("empty root node")
 	}
 
 	st := &meta.ClassParseState{Info: w.info, CurrentFile: file.Name()}
-	walker := &rootWalker{
+	walker := &RootWalker{
 		config: w.config,
 		file:   file,
 		ctx:    newRootContext(w.config, w.ctx, st),
@@ -280,7 +280,7 @@ func (w *Worker) analyzeFile(file *workspace.File, rootNode *ir.Root) (*rootWalk
 	walker.beforeEnterFile()
 	rootNode.Walk(walker)
 	if w.info.IsIndexingComplete() {
-		analyzeFileRootLevel(rootNode, walker)
+		AnalyzeFileRootLevel(rootNode, walker)
 	}
 	walker.afterLeaveFile()
 
@@ -293,10 +293,10 @@ func (w *Worker) analyzeFile(file *workspace.File, rootNode *ir.Root) (*rootWalk
 	return walker, nil
 }
 
-// analyzeFileRootLevel does analyze file top-level code.
+// AnalyzeFileRootLevel does analyze file top-level code.
 // This method is exposed for language server use, you usually
 // do not need to call it yourself.
-func analyzeFileRootLevel(rootNode ir.Node, d *rootWalker) {
+func AnalyzeFileRootLevel(rootNode ir.Node, d *RootWalker) {
 	sc := meta.NewScope()
 	sc.AddVarName("argv", types.NewMap("string[]"), "predefined", meta.VarAlwaysDefined)
 	sc.AddVarName("argc", types.NewMap("int"), "predefined", meta.VarAlwaysDefined)

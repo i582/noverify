@@ -17,6 +17,7 @@ import (
 
 	"github.com/VKCOM/noverify/src/baseline"
 	"github.com/VKCOM/noverify/src/cmd/stubs"
+	"github.com/VKCOM/noverify/src/langsrv"
 	"github.com/VKCOM/noverify/src/lintdebug"
 	"github.com/VKCOM/noverify/src/linter"
 	"github.com/VKCOM/noverify/src/linter/lintapi"
@@ -210,8 +211,14 @@ func mainNoExit(l *linter.Linter, ruleSets []*rules.Set, args *cmdlineArguments,
 
 	log.Printf("Started")
 
-	if err := initStubs(runner.linter); err != nil {
+	if err := InitStubs(runner.linter); err != nil {
 		return 0, fmt.Errorf("Init stubs: %v", err)
+	}
+
+	if args.langServer {
+		ls := langsrv.NewLangServer(l)
+		err := ls.Start()
+		return 0, err
 	}
 
 	if args.gitRepo != "" {
@@ -388,7 +395,7 @@ func analyzeReports(l *linterRunner, cfg *MainConfig, diff []*linter.Report) (cr
 	return criticalReports, containsAutofixableReports
 }
 
-func initStubs(l *linter.Linter) error {
+func InitStubs(l *linter.Linter) error {
 	if l.Config().StubsDir != "" {
 		l.InitStubsFromDir(l.Config().StubsDir)
 		return nil

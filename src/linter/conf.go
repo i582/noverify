@@ -64,6 +64,8 @@ type Config struct {
 	IgnoreTriggerError bool
 
 	PhpVersion *version.Version
+
+	LangServer bool
 }
 
 func NewConfig() *Config {

@@ -126,7 +126,7 @@ main();
 		}
 		var buf bytes.Buffer
 		wr := bufio.NewWriter(&buf)
-		if err := writeMetaCache(wr, result.walker); err != nil {
+		if err := writeMetaCache(wr, result.Walker); err != nil {
 			t.Fatalf("write cache: %v", err)
 		}
 		wr.Flush()
@@ -159,7 +159,7 @@ main();
 		// 3. Check meta decoding.
 		//
 		// If it fails, encoding and/or decoding is broken.
-		encodedMeta := &result.walker.meta
+		encodedMeta := &result.Walker.meta
 		decodedMeta := &fileMeta{}
 		if err := readMetaCache(bytes.NewReader(buf.Bytes()), nil, "", decodedMeta); err != nil {
 			t.Errorf("decoding failed: %v", err)

@@ -68,7 +68,7 @@ type blockWalker struct {
 	// inferred return types if any
 	returnTypes types.Map
 
-	r *rootWalker
+	r *RootWalker
 
 	custom []BlockChecker
 
@@ -91,7 +91,7 @@ type blockWalker struct {
 	callsFuncGetArgs bool
 
 	// callsParentConstructor is set to true when parent::__construct() call
-	// is found. This is needed for a root walker to report constructors
+	// is found. This is needed for a root Walker to report constructors
 	// that do not call parent constructors.
 	callsParentConstructor bool
 
@@ -107,7 +107,7 @@ type blockWalker struct {
 	parentBlockWalkers []*blockWalker // all parent block walkers if we handle nested arrow functions.
 }
 
-func newBlockWalker(r *rootWalker, sc *meta.Scope) *blockWalker {
+func newBlockWalker(r *RootWalker, sc *meta.Scope) *blockWalker {
 	b := &blockWalker{
 		r:            r,
 		ctx:          &blockContext{sc: sc},

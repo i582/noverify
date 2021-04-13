@@ -48,7 +48,7 @@ func isQuote(r rune) bool {
 }
 
 // walkNode is a convenience wrapper for EnterNode-only traversals.
-// It gives a way to traverse a node without defining a new kind of walker.
+// It gives a way to traverse a node without defining a new kind of Walker.
 //
 // enterNode function is called in place where EnterNode method would be called.
 // If n is nil, no traversal is performed.

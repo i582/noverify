@@ -70,6 +70,8 @@ type cmdlineArguments struct {
 	}
 
 	disableCache bool
+
+	langServer bool
 }
 
 func DefaultCacheDir() string {
@@ -190,4 +192,6 @@ func bindFlags(config *linter.Config, ruleSets []*rules.Set, args *cmdlineArgume
 
 	var encodingUnused string
 	flag.StringVar(&encodingUnused, "encoding", "", "Deprecated and unused")
+
+	flag.BoolVar(&args.langServer, "lang-server", false, "Run language server for VS Code")
 }
