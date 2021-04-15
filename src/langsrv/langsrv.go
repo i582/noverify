@@ -6,12 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	dbg "runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"go.lsp.dev/uri"
 
@@ -28,14 +31,14 @@ var respMutex sync.Mutex
 
 type baseRequest struct {
 	JSONRPC string `json:"jsonrpc"`
-	ID      *int   `json:"id"`
+	ID      string `json:"id"`
 	Method  string `json:"method"`
 	Params  json.RawMessage
 }
 
 type response struct {
 	JSONRPC string      `json:"jsonrpc"`
-	ID      *int        `json:"id"`
+	ID      string      `json:"id"`
 	Result  interface{} `json:"result"`
 }
 
@@ -141,37 +144,174 @@ func (ls *LangServer) handleMessage(buf []byte) error {
 	switch req.Method {
 	case "initialize":
 		return ls.handleInitialize(&req)
-	// case "textDocument/didOpen":
-	// 	return handleTextDocumentDidOpen(&req)
+	case "exit":
+		os.Exit(0)
+	case "textDocument/didOpen":
+		return ls.handleTextDocumentDidOpen(&req)
 	case "textDocument/didChange":
 		return ls.handleTextDocumentDidChange(&req)
-	// case "textDocument/definition":
-	// 	return handleTextDocumentDefinition(&req)
-	// case "textDocument/references":
-	// 	return handleTextDocumentReferences(&req)
-	// case "textDocument/didClose":
-	// 	return handleTextDocumentDidClose(&req)
-	// case "textDocument/completion":
-	// 	return handleTextDocumentCompletion(&req)
-	// case "textDocument/hover":
-	// 	return handleTextDocumentHover(&req)
-	// case "textDocument/documentSymbol":
-	// 	return handleTextDocumentSymbol(&req)
+	case "textDocument/didClose":
+		return ls.handleTextDocumentDidClose(&req)
 	case "workspace/didChangeWatchedFiles":
-		return ls.handleTextDocumentDidChange(&req)
+		return ls.handleChangeWatchedFiles(&req)
 	default:
 		lintdebug.Send("Got %s, data: %s", req.Method, req.Params)
 	}
 
-	if req.ID == nil {
-		return nil
-	}
+	// if req.ID == nil {
+	// 	return nil
+	// }
 
 	return writeMessage(&response{
 		JSONRPC: req.JSONRPC,
 		ID:      req.ID,
 		Result:  map[string]interface{}{},
 	})
+}
+
+func (ls *LangServer) handleTextDocumentDidClose(req *baseRequest) error {
+	var params vscode.TextDocumentDidOpenParams
+	if err := json.Unmarshal([]byte(req.Params), &params); err != nil {
+		return err
+	}
+
+	u := params.TextDocument.URI
+	lintdebug.Send("Close text document %s", u)
+
+	if ls.isFileScheme(u) {
+		ls.closeFile(u.Filename())
+	}
+
+	return nil
+}
+
+func (ls *LangServer) closeFile(filename string) {
+	ls.openMapMutex.Lock()
+	delete(ls.openMap, filename)
+	ls.openMapMutex.Unlock()
+}
+
+func (ls *LangServer) handleChangeWatchedFiles(req *baseRequest) error {
+	var params vscode.DidChangeWatchedFilesParams
+	if err := json.Unmarshal([]byte(req.Params), &params); err != nil {
+		return err
+	}
+
+	ls.externalChanges(params.Changes)
+
+	return nil
+}
+
+func (ls *LangServer) externalChanges(changes []vscode.FileEvent) {
+	ls.changingMutex.Lock()
+
+	start := time.Now()
+	lintdebug.Send("Started processing external changes %+v", changes)
+
+	ls.lint.MetaInfo().SetIndexingComplete(false)
+
+	ls.lint.MetaInfo().Lock()
+	for _, ev := range changes {
+		if ev.Type == vscode.Deleted {
+			ls.lint.MetaInfo().DeleteMetaForFileNonLocked(ev.URI.Filename())
+		}
+	}
+	ls.lint.MetaInfo().Unlock()
+
+	ls.concurrentParseChanges(changes)
+
+	ls.changingMutex.Unlock()
+	ls.lint.MetaInfo().SetIndexingComplete(true)
+
+	// update currently opened files if needed
+	for _, ev := range changes {
+		filename := ev.URI.Filename()
+		switch ev.Type {
+		case vscode.Created, vscode.Changed:
+			ls.openMapMutex.Lock()
+			_, ok := ls.openMap[filename]
+			ls.openMapMutex.Unlock()
+
+			if !ok {
+				break
+			}
+
+			contents, err := ls.getFileContents(filename)
+			if err != nil {
+				lintdebug.Send("Could not read %s: %s", filename, err.Error())
+				break
+			}
+
+			ls.changeFile(filename, string(contents))
+		}
+	}
+
+	lintdebug.Send("Finished processing %d external changes in %s", len(changes), time.Since(start))
+}
+
+// parse creations and changes of files concurrently
+// changingMutex must be held
+func (ls *LangServer) concurrentParseChanges(changes []vscode.FileEvent) {
+	filenamesCh := make(chan string)
+
+	go func() {
+		for _, ev := range changes {
+			switch ev.Type {
+			case vscode.Created, vscode.Changed:
+				filenamesCh <- ev.URI.Filename()
+			}
+		}
+		close(filenamesCh)
+	}()
+
+	var wg sync.WaitGroup
+
+	ls.lint.MetaInfo().SetIndexingComplete(false)
+
+	for i := 0; i < ls.lint.Config().MaxConcurrency; i++ {
+		wg.Add(1)
+		go func() {
+			for filename := range filenamesCh {
+				err := ls.indexer.IndexFile(workspace.FileInfo{Name: filename})
+				if err != nil {
+					lintdebug.Send("Could not parse %s: %s", filename, err.Error())
+				}
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	ls.lint.MetaInfo().SetIndexingComplete(true)
+}
+
+// getFileContents reads specified file and returns UTF-8 encoded bytes.
+func (ls *LangServer) getFileContents(filename string) ([]byte, error) {
+	r, err := ls.lint.Config().SrcInput.NewReader(filename)
+	if err != nil {
+		return nil, fmt.Errorf("open input: %v", err)
+	}
+	contents, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("read input: %v", err)
+	}
+	return contents, nil
+}
+
+func (ls *LangServer) handleTextDocumentDidOpen(req *baseRequest) error {
+	var params vscode.TextDocumentDidOpenParams
+	if err := json.Unmarshal([]byte(req.Params), &params); err != nil {
+		return err
+	}
+
+	u := params.TextDocument.URI
+	lintdebug.Send("Open text document %s", u)
+
+	if ls.isFileScheme(u) {
+		ls.openFile(u.Filename(), params.TextDocument.Text)
+	}
+
+	return nil
 }
 
 func writeMessage(message interface{ IMessage() }) error {
@@ -220,26 +360,26 @@ func (ls *LangServer) handleInitialize(req *baseRequest) error {
 		lintdebug.Send("Root dir: %s", params.RootURI.Filename())
 	}
 
-	// go func() {
-	// 	analysisFiles := []string{params.RootURI.Filename()}
-	//
-	// 	filter := workspace.NewFilenameFilter(ls.lint.Config().ExcludeRegex)
-	// 	ls.lint.AnalyzeFiles(workspace.ReadFilenames(analysisFiles, filter, ls.lint.Config().PhpExtensions))
-	// 	ls.lint.MetaInfo().SetIndexingComplete(true)
-	//
-	// 	// fully analyze all opened files
-	// 	// other files are not analyzed fully at all
-	// 	ls.openMapMutex.Lock()
-	// 	for filename, op := range ls.openMap {
-	// 		lintdebug.Send("open: %s", filename)
-	// 		go ls.openFile(filename, string(op.file.Contents()))
-	// 	}
-	// 	ls.openMapMutex.Unlock()
-	// }()
+	go func() {
+		analysisFiles := []string{params.RootURI.Filename()}
+
+		filter := workspace.NewFilenameFilter(ls.lint.Config().ExcludeRegex)
+		ls.lint.AnalyzeFiles(workspace.ReadFilenames(analysisFiles, filter, ls.lint.Config().PhpExtensions))
+		ls.lint.MetaInfo().SetIndexingComplete(true)
+
+		// fully analyze all opened files
+		// other files are not analyzed fully at all
+		ls.openMapMutex.Lock()
+		for filename, op := range ls.openMap {
+			lintdebug.Send("open: %s", filename)
+			go ls.openFile(filename, string(op.file.Contents()))
+		}
+		ls.openMapMutex.Unlock()
+	}()
 
 	lintdebug.Send(req.JSONRPC)
 
-	writeMessage(&response{
+	err := writeMessage(&response{
 		JSONRPC: req.JSONRPC,
 		ID:      req.ID,
 		Result: map[string]interface{}{
@@ -275,9 +415,7 @@ func (ls *LangServer) handleInitialize(req *baseRequest) error {
 		},
 	})
 
-	ls.flushReports(`c:/Users/p.makhnev/Music/2.php`, nil)
-
-	return nil
+	return err
 }
 
 type openedFile struct {
@@ -325,47 +463,47 @@ func (ls *LangServer) changeFile(filename, contents string) {
 }
 
 func (ls *LangServer) changeFileNonLocked(filename, contents string) {
-	// if !ls.lint.MetaInfo().IsIndexingComplete() {
-	// 	return
-	// }
-	//
-	// // parse file, update index for it, and then generate diagnostics based on new index
-	// ls.lint.MetaInfo().SetIndexingComplete(false)
-	//
-	// res, err := ls.indexer.ParseContents(workspace.FileInfo{
-	// 	Name:     filename,
-	// 	Contents: []byte(contents),
-	// })
-	// if err != nil {
-	// 	log.Printf("Could not parse %s: %s", filename, err.Error())
-	// 	lintdebug.Send("Could not parse %s: %s", filename, err.Error())
-	// 	return
-	// }
-	//
-	// // w.UpdateMetaInfo()
-	//
-	// ls.lint.MetaInfo().SetIndexingComplete(true)
-	//
-	// newWalker := linter.NewWalkerForLangServer(ls.lint.MetaInfo(), ls.lint.Config(), linter.NewWorkerContext(), res.Walker)
-	//
-	// newWalker.InitCustom()
-	// res.RootNode.Walk(newWalker)
-	//
-	// linter.AnalyzeFileRootLevel(res.RootNode, newWalker)
-	//
-	// ls.openMapMutex.Lock()
-	// f := openedFile{
-	// 	rootNode: res.RootNode,
-	// 	// scopes:   w.Scopes,
-	// 	file: res.Walker.File(),
-	// }
-	// ls.openMap[filename] = f
-	// ls.openMapMutex.Unlock()
+	if !ls.lint.MetaInfo().IsIndexingComplete() {
+		return
+	}
 
-	ls.flushReports(filename, nil)
+	// parse file, update index for it, and then generate diagnostics based on new index
+	ls.lint.MetaInfo().SetIndexingComplete(false)
+
+	res, err := ls.indexer.ParseContents(workspace.FileInfo{
+		Name:     filename,
+		Contents: []byte(contents),
+	})
+	if err != nil {
+		log.Printf("Could not parse %s: %s", filename, err.Error())
+		lintdebug.Send("Could not parse %s: %s", filename, err.Error())
+		return
+	}
+
+	// w.UpdateMetaInfo()
+
+	ls.lint.MetaInfo().SetIndexingComplete(true)
+
+	newWalker := linter.NewWalkerForLangServer(ls.lint.MetaInfo(), ls.lint.Config(), linter.NewWorkerContext(), res.Walker)
+
+	newWalker.InitCustom()
+	res.RootNode.Walk(newWalker)
+
+	linter.AnalyzeFileRootLevel(res.RootNode, newWalker)
+
+	ls.openMapMutex.Lock()
+	f := openedFile{
+		rootNode: res.RootNode,
+		// scopes:   w.Scopes,
+		file: res.Walker.File(),
+	}
+	ls.openMap[filename] = f
+	ls.openMapMutex.Unlock()
+
+	ls.flushReports(filename, newWalker)
 }
 
-func (ls *LangServer) flushReports(filename string, d *linter.RootWalker) {
+func (ls *LangServer) flushReports(filename string, r *linter.RootWalker) {
 	// diag := d.Diagnostics
 	// if len(diag) == 0 && diag == nil {
 	// 	diag = make([]vscode.Diagnostic, 0)
@@ -373,35 +511,47 @@ func (ls *LangServer) flushReports(filename string, d *linter.RootWalker) {
 
 	var diags []vscode.Diagnostic
 
-	for i := 0; i < 10; i++ {
+	// for i := 0; i < 10; i++ {
+	// 	diags = append(diags, vscode.Diagnostic{
+	// 		Range: vscode.Range{
+	// 			Start: vscode.Position{
+	// 				Line:      i,
+	// 				Character: 0,
+	// 			},
+	// 			End: vscode.Position{
+	// 				Line:      i,
+	// 				Character: 3,
+	// 			},
+	// 		},
+	// 		Severity: vscode.Error,
+	// 		Code:     "unused",
+	// 		Source:   "noverify",
+	// 		Message:  "some unused error",
+	// 		Tags:     []int{1},
+	// 	})
+	// }
+
+	for _, report := range r.Reports() {
 		diags = append(diags, vscode.Diagnostic{
 			Range: vscode.Range{
 				Start: vscode.Position{
-					Line:      i,
-					Character: 0,
+					Line:      report.Line - 1,
+					Character: report.StartChar,
 				},
 				End: vscode.Position{
-					Line:      i,
-					Character: 3,
+					Line:      report.Line - 1,
+					Character: report.EndChar,
 				},
 			},
 			Severity: vscode.Error,
-			Code:     "unused",
+			Code:     report.CheckName,
 			Source:   "noverify",
-			Message:  "some unused error",
-			Tags:     []int{1},
+			Message:  report.Message,
 		})
 	}
 
-	js, _ := json.Marshal(&methodCall{
-		JSONRPC: "2.0",
-		Method:  "textDocument/publishDiagnostics",
-		Params: &vscode.PublishDiagnosticsParams{
-			URI:         uri.File(filename),
-			Diagnostics: diags,
-		},
-	})
-	lintdebug.Send("reports %s", string(js))
+	log.Println(diags)
+
 	err := writeMessage(&methodCall{
 		JSONRPC: "2.0",
 		Method:  "textDocument/publishDiagnostics",
@@ -416,16 +566,29 @@ func (ls *LangServer) flushReports(filename string, d *linter.RootWalker) {
 	}
 }
 
+func (ls *LangServer) isFileScheme(documentURI uri.URI) bool {
+	u, err := url.ParseRequestURI(string(documentURI))
+	if err != nil {
+		return false
+	}
+
+	if u.Scheme != uri.FileScheme {
+		return false
+	}
+
+	return true
+}
+
 func (ls *LangServer) handleTextDocumentDidChange(req *baseRequest) error {
 	var params vscode.TextDocumentDidChangeParams
 	if err := json.Unmarshal(req.Params, &params); err != nil {
 		return err
 	}
 
-	// if len(params.ContentChanges) != 1 {
-	// 	lintdebug.Send("Unexpected number of content changes: %d", len(params.ContentChanges))
-	// 	return nil
-	// }
+	if len(params.ContentChanges) != 1 {
+		lintdebug.Send("Unexpected number of content changes: %d", len(params.ContentChanges))
+		return nil
+	}
 
 	u := params.TextDocument.URI
 	lintdebug.Send("uri: %s", string(u))
@@ -434,9 +597,9 @@ func (ls *LangServer) handleTextDocumentDidChange(req *baseRequest) error {
 		return nil
 	}
 	//
-	// if isFileScheme(u) {
-	ls.changeFile(u.Filename(), params.ContentChanges[0].Text)
-	// }
+	if ls.isFileScheme(u) {
+		ls.changeFile(u.Filename(), params.ContentChanges[0].Text)
+	}
 
 	lintdebug.Send("file changed %s", params.ContentChanges)
 

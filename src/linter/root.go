@@ -70,6 +70,10 @@ type RootWalker struct {
 	config *Config
 }
 
+func (d *RootWalker) Reports() []*Report {
+	return d.reports
+}
+
 type phpDocParamEl struct {
 	optional bool
 	typ      types.Map
