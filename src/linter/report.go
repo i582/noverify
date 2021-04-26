@@ -659,6 +659,15 @@ $_ = is_float($a);`,
 			Before:   `strpos('/', $s);`,
 			After:    `strpos($s, '/');`,
 		},
+
+		{
+			Name:     "typeHint",
+			Default:  true,
+			Quickfix: false,
+			Comment:  `Report suspicious arguments order`,
+			Before:   `strpos('/', $s);`,
+			After:    `strpos($s, '/');`,
+		},
 	}
 
 	for _, info := range allChecks {
