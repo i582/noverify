@@ -1561,7 +1561,27 @@ func (d *rootWalker) checkTypeHintAndPhpDocReturnType(n *ir.Identifier, phpDocTy
 	phpDocTypes = types.NewMapFromMap(solver.ResolveTypes(d.metaInfo(), d.ctx.st.CurrentClass, phpDocTypes, solver.ResolverMap{}))
 	typeHintTypes = types.NewMapFromMap(solver.ResolveTypes(d.metaInfo(), d.ctx.st.CurrentClass, typeHintTypes, solver.ResolverMap{}))
 
-	ok, desc := types.CompatibleTypes(phpDocTypes, typeHintTypes)
+	comparator := types.Compatible{
+		GetClassByType: func(name string) (types.ClassData, bool) {
+			className, ok := solver.GetClassName(d.ctx.st, &ir.Name{Value: name})
+			if !ok {
+				return types.ClassData{}, false
+			}
+
+			class, ok := d.metaInfo().GetClass(className)
+			if !ok {
+				return types.ClassData{}, false
+			}
+
+			return types.ClassData{
+				Name:       class.Name,
+				Parent:     class.Parent,
+				Interfaces: class.Interfaces,
+			}, true
+		},
+	}
+
+	ok, desc := comparator.CompatibleTypes(phpDocTypes, typeHintTypes)
 	if !ok {
 		d.Report(n, LevelError, "typeHint", "type in typehint and phpdoc not compatibl: "+desc)
 	}
