@@ -1554,7 +1554,7 @@ func (d *rootWalker) enterFunction(fun *ir.FunctionStmt) bool {
 }
 
 func (d *rootWalker) checkTypeHintAndPhpDocReturnType(n *ir.Identifier, phpDocTypes, typeHintTypes types.Map) {
-	if phpDocTypes.IsEmpty() || typeHintTypes.IsEmpty() {
+	if phpDocTypes.Empty() || typeHintTypes.Empty() {
 		return
 	}
 
@@ -1562,14 +1562,14 @@ func (d *rootWalker) checkTypeHintAndPhpDocReturnType(n *ir.Identifier, phpDocTy
 		phpDocType := phpDocTypes.String()
 		typeHintType := typeHintTypes.String()
 
-		if !types.IsClassType(phpDocType) && !types.IsClassType(typeHintType) {
+		if !types.IsClass(phpDocType) && !types.IsClass(typeHintType) {
 			if phpDocType != typeHintType {
 				d.Report(n, LevelError, "typeHint", "type in typehint and phpdoc not compatible")
 				return
 			}
 		}
 
-		if types.IsClassType(phpDocType) && types.IsClassType(typeHintType) {
+		if types.IsClass(phpDocType) && types.IsClass(typeHintType) {
 			// todo
 
 			return
@@ -1584,14 +1584,14 @@ func (d *rootWalker) checkTypeHintAndPhpDocReturnType(n *ir.Identifier, phpDocTy
 		compatibleWithOne := false
 
 		phpDocTypes.Iterate(func(phpDocType string) {
-			if !types.IsClassType(phpDocType) && !types.IsClassType(typeHintType) {
+			if !types.IsClass(phpDocType) && !types.IsClass(typeHintType) {
 				if phpDocType == typeHintType {
 					compatibleWithOne = true
 					return
 				}
 			}
 
-			if types.IsClassType(phpDocType) && types.IsClassType(typeHintType) {
+			if types.IsClass(phpDocType) && types.IsClass(typeHintType) {
 				// todo
 				compatibleWithOne = true
 				return
