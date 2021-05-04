@@ -21,7 +21,21 @@ func IsArray(s string) bool {
 }
 
 func IsTrivial(s string) bool {
-	return trivial[s]
+	a, ok := Alias(s)
+	if !ok {
+		return trivial[s]
+	}
+
+	return trivial[a]
+}
+
+func IsPOD(s string) bool {
+	a, ok := Alias(s)
+	if !ok {
+		return pod[s]
+	}
+
+	return pod[a]
 }
 
 func IsAlias(s string) bool {
@@ -34,8 +48,20 @@ func Alias(s string) (string, bool) {
 	return alias, has
 }
 
-func ArrayType(typ string) string {
+func ArrayElementType(typ string) string {
 	return strings.TrimSuffix(typ, "[]")
+}
+
+var pod = map[string]bool{
+	"bool":   true,
+	"float":  true,
+	"int":    true,
+	"string": true,
+	"void":   true,
+
+	"null":  true,
+	"true":  true,
+	"false": true,
 }
 
 var trivial = map[string]bool{
