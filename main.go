@@ -17,7 +17,7 @@ func printVersion() {
 	if BuildCommit == "" {
 		log.Printf("built without version info (try using 'make install'?)")
 	} else {
-		log.Printf("built on: %s OS: %s Commit: %s\n", BuildTime, BuildOSUname, BuildCommit)
+		log.Printf("built on1: %s OS: %s Commit: %s\n", BuildTime, BuildOSUname, BuildCommit)
 	}
 }
 
