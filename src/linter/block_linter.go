@@ -396,30 +396,8 @@ func (b *blockLinter) checkNew(e *ir.NewExpr) {
 	}
 }
 
-func (b *blockLinter) checkStmtExpression(s *ir.ExpressionStmt) {
-	report := false
-
-	// All branches except default try to filter-out common
-	// cases to reduce the number of type solving performed.
-	if irutil.IsAssign(s.Expr) {
-		return
-	}
-	switch s.Expr.(type) {
-	case *ir.ImportExpr, *ir.ExitExpr:
-		// Skip.
-	case *ir.ArrayExpr, *ir.NewExpr:
-		// Report these even if they are not pure.
-		report = true
-	default:
-		typ := b.walker.exprType(s.Expr)
-		if !typ.Is("void") {
-			report = b.walker.sideEffectFree(s.Expr)
-		}
-	}
-
-	if report {
-		b.report(s.Expr, LevelWarning, "discardExpr", "expression evaluated but not used")
-	}
+func (b *blockLinter) checkStmtExpression(*ir.ExpressionStmt) {
+	_ = 10
 }
 
 func (b *blockLinter) checkConstFetch(e *ir.ConstFetchExpr) {
